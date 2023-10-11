@@ -34,7 +34,10 @@ export default cf.merge(
                         Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
                         PortMappings: [{
                             ContainerPort: 8554,
-                            Protocol: 'udp'
+                            Protocol: 'tcp'
+                        },{
+                            ContainerPort: 8889,
+                            Protocol: 'tcp'
                         }],
                         Environment: [
                             { Name: 'StackName', Value: cf.stackName },
