@@ -1,0 +1,17 @@
+{
+    "name": "coe-media",
+    "profile": "coegc",
+    "region": "us-gov-east-1",
+    "tags": [
+        {
+            "Key": "Project",
+            "Value": "coe-media"
+        },
+        "Owner"
+    ],
+    "artifacts": {
+        "docker": [
+            "coe-ecr-media:{{gitsha}}"
+        ]
+    }
+}

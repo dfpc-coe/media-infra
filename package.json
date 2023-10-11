@@ -1,0 +1,29 @@
+{
+    "name": "@tak-ps/media-infra",
+    "type": "module",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Infrastructure to support LDAP based auth in TAK",
+    "scripts": {
+        "lint": "eslint cloudformation/*.js cloudformation/lib/*.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "engines": {
+        "node": ">= 18"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tak-ps/etl.git"
+    },
+    "author": "Nick Ingalls <nick@ingalls.ca>",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/tak-ps/auth-infra/issues"
+    },
+    "homepage": "https://github.com/tak-ps/auth-infra#readme",
+    "dependencies": {
+        "@openaddresses/batch-alarms": "^4.0.0",
+        "@openaddresses/cloudfriend": "^7.0.0",
+        "@openaddresses/deploy": "^8.0.0"
+    }
+}
