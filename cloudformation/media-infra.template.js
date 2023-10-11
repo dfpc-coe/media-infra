@@ -17,7 +17,6 @@ export default cf.merge(
         Resources: {
             TaskDefinition: {
                 Type: 'AWS::ECS::TaskDefinition',
-                DependsOn: ['LDAPMasterSecret'],
                 Properties: {
                     Family: cf.stackName,
                     Cpu: 1024,
@@ -34,7 +33,8 @@ export default cf.merge(
                         Name: 'api',
                         Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
                         PortMappings: [{
-                            ContainerPort: 389
+                            ContainerPort: 8554,
+                            Protocol: 'udp'
                         }],
                         Environment: [
                             { Name: 'StackName', Value: cf.stackName },
@@ -50,6 +50,70 @@ export default cf.merge(
                             }
                         },
                         Essential: true
+                    }]
+                }
+            },
+            ExecRole: {
+                Type: 'AWS::IAM::Role',
+                Properties: {
+                    AssumeRolePolicyDocument: {
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Effect: 'Allow',
+                            Principal: {
+                                Service: 'ecs-tasks.amazonaws.com'
+                            },
+                            Action: 'sts:AssumeRole'
+                        }]
+                    },
+                    Policies: [{
+                        PolicyName: cf.join([cf.stackName, '-api-logging']),
+                        PolicyDocument: {
+                            Statement: [{
+                                Effect: 'Allow',
+                                Action: [
+                                    'logs:CreateLogGroup',
+                                    'logs:CreateLogStream',
+                                    'logs:PutLogEvents',
+                                    'logs:DescribeLogStreams'
+                                ],
+                                Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
+                            }]
+                        }
+                    }],
+                    ManagedPolicyArns: [
+                        cf.join(['arn:', cf.partition, ':iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'])
+                    ],
+                    Path: '/service-role/'
+                }
+            },
+            TaskRole: {
+                Type: 'AWS::IAM::Role',
+                Properties: {
+                    AssumeRolePolicyDocument: {
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Effect: 'Allow',
+                            Principal: {
+                                Service: 'ecs-tasks.amazonaws.com'
+                            },
+                            Action: 'sts:AssumeRole'
+                        }]
+                    },
+                    Policies: [{
+                        PolicyName: cf.join('-', [cf.stackName, 'api-policy']),
+                        PolicyDocument: {
+                            Statement: [{
+                                Effect: 'Allow',
+                                Action: [
+                                    'logs:CreateLogGroup',
+                                    'logs:CreateLogStream',
+                                    'logs:PutLogEvents',
+                                    'logs:DescribeLogStreams'
+                                ],
+                                Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
+                            }]
+                        }
                     }]
                 }
             },
