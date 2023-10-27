@@ -1,4 +1,4 @@
-<h1 align=center>TAK Auth Infra</h1>
+<h1 align=center>TAK Media Server Infra</h1>
 
 <p align=center>Infrastructure to support LDAP based auth in TAK</p>
 
