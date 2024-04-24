@@ -36,6 +36,9 @@ export default cf.merge(
                             ContainerPort: 8554,
                             Protocol: 'tcp'
                         },{
+                            ContainerPort: 8890,
+                            Protocol: 'tcp'
+                        },{
                             ContainerPort: 8889,
                             Protocol: 'tcp'
                         }],

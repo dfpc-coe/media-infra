@@ -8,6 +8,7 @@
 | ---- | ----- |
 | 8554 | RTSP `rtsp://<server>:8554/<mystream>` |
 | 8889 | WebRTC `http://<server>:8889/<mystream>/publish` |
+| 8890 | SRT `srt://localhost:8890?streamid=publish:mystream&pkt_size=1316` |
 
 ## AWS Deployment
 
