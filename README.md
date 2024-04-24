@@ -1,10 +1,17 @@
 <h1 align=center>TAK Media Server Infra</h1>
 
-<p align=center>Infrastructure to support LDAP based auth in TAK</p>
+<p align=center>Infrastructure to support a TAK Compatible Media Server</p>
+
+## Ports
+
+| Port | Notes |
+| ---- | ----- |
+| 8554 | RTSP `rtsp://<server>:8554/<mystream>` |
+| 8889 | WebRTC `http://<server>:8889/<mystream>/publish` |
 
 ## AWS Deployment
 
-### Auth Deployment
+### Media Deployment
 
 From the root directory, install the deploy dependencies
 
