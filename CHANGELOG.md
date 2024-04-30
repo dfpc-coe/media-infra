@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v1.1.0
+
+- :rocket: Add Custom Config File
+
 ### v1.0.1
 
 - :rocket: Add releaser
