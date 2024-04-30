@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v1.2.0
+
+- :rocket: Cut down config table
+
 ### v1.1.0
 
 - :rocket: Add Custom Config File
