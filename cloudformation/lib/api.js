@@ -1,20 +1,20 @@
 import cf from '@openaddresses/cloudfriend';
 
 const PORTS = [{
-    Port: 9997,
+    Port: 9997
 },{
-    Port: 8554,
+    Port: 8554
 },{
-    Port: 8322,
+    Port: 8322
 },{
-    Port: 1935,
+    Port: 1935
 },{
-    Port: 8888,
+    Port: 8888
 },{
-    Port: 8889,
+    Port: 8889
 },{
-    Port: 8890,
-}]
+    Port: 8890
+}];
 
 export default cf.merge(
     {
@@ -75,7 +75,7 @@ export default cf.merge(
                             IpProtocol: 'tcp',
                             FromPort: port.Port,
                             ToPort: port.Port
-                        }
+                        };
                     }),
                     VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
                 }
@@ -90,7 +90,7 @@ export default cf.merge(
                     LoadBalancerArn: cf.ref('ELB'),
                     Port: 8554,
                     Protocol: 'TCP'
-                },
+                }
             },
             TargetGroupRTSP: {
                 Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
@@ -134,7 +134,7 @@ export default cf.merge(
                         }],
                         Environment: [
                             { Name: 'StackName', Value: cf.stackName },
-                            { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
+                            { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
                         ],
                         LogConfiguration: {
                             LogDriver: 'awslogs',
@@ -254,10 +254,10 @@ export default cf.merge(
                             IpProtocol: 'tcp',
                             FromPort: port.Port,
                             ToPort: port.Port
-                        }
-                    }),
+                        };
+                    })
                 }
-            },
-        },
-    },
+            }
+        }
+    }
 );

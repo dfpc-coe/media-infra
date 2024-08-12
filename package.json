@@ -25,5 +25,9 @@
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^8.0.0"
+    },
+    "devDependencies": {
+        "eslint": "^9.9.0",
+        "eslint-plugin-n": "^17.10.2"
     }
 }

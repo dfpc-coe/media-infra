@@ -14,7 +14,7 @@ export default cf.merge(
                 Description: 'VPC/ECS Stack to deploy into',
                 Type: 'String',
                 Default: 'prod'
-            },
-        },
-    },
+            }
+        }
+    }
 );
