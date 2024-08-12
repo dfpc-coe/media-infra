@@ -32,7 +32,7 @@ jobs:
           aws-region: ${{secrets.AWS_REGION}}
 
       - name: Docker Build API
-        run: docker-compose build api
+        run: docker compose build api
 
       - name: Login to Amazon ECR
         id: login-ecr
