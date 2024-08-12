@@ -33,9 +33,6 @@ export default cf.merge(
                     Type: 'network',
                     SecurityGroups: [cf.ref('ELBSecurityGroup')],
                     LoadBalancerAttributes: [{
-                        Key: 'idle_timeout.timeout_seconds',
-                        Value: 4000
-                    },{
                         Key: 'access_logs.s3.enabled',
                         Value: true
                     },{
