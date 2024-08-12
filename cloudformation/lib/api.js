@@ -36,15 +36,6 @@ export default cf.merge(
                         Key: 'idle_timeout.timeout_seconds',
                         Value: 4000
                     },{
-                        Key: 'connection_logs.s3.enabled',
-                        Value: true
-                    },{
-                        Key: 'connection_logs.s3.bucket',
-                        Value: cf.importValue(cf.join(['coe-elb-logs-', cf.ref('Environment'), '-bucket']))
-                    },{
-                        Key: 'connection_logs.s3.prefix',
-                        Value: cf.stackName
-                    },{
                         Key: 'access_logs.s3.enabled',
                         Value: true
                     },{
@@ -235,7 +226,7 @@ export default cf.merge(
                     LoadBalancers: [{
                         ContainerName: 'api',
                         ContainerPort: 8554,
-                        TargetGroupArn: cf.ref('TargetGroup8554')
+                        TargetGroupArn: cf.ref('TargetGroupRTSP')
                     }]
                 }
             },
