@@ -39,7 +39,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Docker Tag API
-        run: docker tag media-infra_api:latest ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-media:${{github.event.pull_request.head.sha || github.sha}}
+        run: docker tag media-infra-api:latest ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-media:${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Docker Push API
         run: docker push ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-media:${{github.event.pull_request.head.sha || github.sha}}
