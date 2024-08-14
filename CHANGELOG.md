@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v1.3.0
+
+- :rocket: Deploy behind ELB as ECS Service
+
 ### v1.2.0
 
 - :rocket: Cut down config table
