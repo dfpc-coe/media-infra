@@ -88,9 +88,6 @@ export default cf.merge(
                     Protocol: 'TCP',
                     TargetType: 'ip',
                     VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
-                    Matcher: {
-                        HttpCode: '200,202,302,304'
-                    }
                 }
             },
             TaskDefinition: {
