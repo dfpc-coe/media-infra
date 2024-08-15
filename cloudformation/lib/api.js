@@ -261,7 +261,7 @@ export default cf.merge(
                         TargetGroupArn: cf.ref('TargetGroupRTSP')
                     },{
                         ContainerName: 'api',
-                        ContainerPort: 9997,,
+                        ContainerPort: 9997,
                         TargetGroupArn: cf.ref('TargetGroupAPI')
                     }]
                 }
