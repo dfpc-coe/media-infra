@@ -1,19 +1,33 @@
 import cf from '@openaddresses/cloudfriend';
 
 const PORTS = [{
-    Port: 9997
+    Port: 9997,
+    Protocol: 'tcp',
+    Description: 'API Access'
 },{
-    Port: 8554
+    Port: 8554,
+    Protocol: 'tcp',
+    Description: 'RTSP'
 },{
-    Port: 8322
+    Port: 8322,
+    Protocol: 'tcp',
+    Description: ''
 },{
-    Port: 1935
+    Port: 1935,
+    Protocol: 'tcp',
+    Description: ''
 },{
-    Port: 8888
+    Port: 8888,
+    Protocol: 'tcp',
+    Description: ''
 },{
-    Port: 8889
+    Port: 8889,
+    Protocol: 'tcp',
+    Description: ''
 },{
-    Port: 8890
+    Port: 8890,
+    Protocol: 'udp',
+    Description: ''
 }];
 
 export default cf.merge(
@@ -68,6 +82,28 @@ export default cf.merge(
                     VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
                 }
             },
+            ListenerAPI: {
+                Type: 'AWS::ElasticLoadBalancingV2::Listener',
+                Properties: {
+                    DefaultActions: [{
+                        Type: 'forward',
+                        TargetGroupArn: cf.ref('TargetGroupAPI')
+                    }],
+                    LoadBalancerArn: cf.ref('ELB'),
+                    Port: 9997,
+                    Protocol: 'TCP'
+                }
+            },
+            TargetGroupAPI: {
+                Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
+                DependsOn: 'ELB',
+                Properties: {
+                    Port: 9997,
+                    Protocol: 'TCP',
+                    TargetType: 'ip',
+                    VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+                }
+            },
             ListenerRTSP: {
                 Type: 'AWS::ElasticLoadBalancingV2::Listener',
                 Properties: {
@@ -107,16 +143,12 @@ export default cf.merge(
                     ContainerDefinitions: [{
                         Name: 'api',
                         Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
-                        PortMappings: [{
-                            ContainerPort: 8554,
-                            Protocol: 'tcp'
-                        },{
-                            ContainerPort: 8890,
-                            Protocol: 'udp'
-                        },{
-                            ContainerPort: 8889,
-                            Protocol: 'tcp'
-                        }],
+                        PortMappings: PORTS.map((port) => {
+                            return {
+                                ContainerPort: port.Port,
+                                Protocol: port.Protocol
+                            }
+                        }),
                         Environment: [
                             { Name: 'StackName', Value: cf.stackName },
                             { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
@@ -236,7 +268,7 @@ export default cf.merge(
                     SecurityGroupIngress: PORTS.map((port) => {
                         return {
                             CidrIp: '0.0.0.0/0',
-                            IpProtocol: 'tcp',
+                            IpProtocol: port.Protocol,
                             FromPort: port.Port,
                             ToPort: port.Port
                         };
