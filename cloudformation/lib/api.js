@@ -144,7 +144,7 @@ export default cf.merge(
                         Name: cf.stackName,
                         EFSVolumeConfiguration: {
                             FilesystemId: cf.ref('EFSFileSystem')
-                        }   
+                        }
                     }],
                     ContainerDefinitions: [{
                         Name: 'api',
@@ -259,6 +259,10 @@ export default cf.merge(
                         ContainerName: 'api',
                         ContainerPort: 8554,
                         TargetGroupArn: cf.ref('TargetGroupRTSP')
+                    },{
+                        ContainerName: 'api',
+                        ContainerPort: 9997,,
+                        TargetGroupArn: cf.ref('TargetGroupAPI')
                     }]
                 }
             },
