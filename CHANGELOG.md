@@ -12,6 +12,15 @@
 
 ### Pending Release
 
+### v1.4.0
+
+- :rocket: Expose API Port
+- :tada: Setup EFS for persisant config
+
+### v1.3.0
+
+- :rocket: Deploy behind ELB as ECS Service
+
 ### v1.2.0
 
 - :rocket: Cut down config table
