@@ -126,10 +126,10 @@ export default cf.merge(
                     VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
                 }
             },
-            TaskDefinition: {
+            ServiceTaskDefinition: {
                 Type: 'AWS::ECS::TaskDefinition',
                 Properties: {
-                    Family: cf.stackName,
+                    Family: cf.join([cf.stackName, '-service']),
                     Cpu: 1024,
                     Memory: 4096 * 2,
                     NetworkMode: 'awsvpc',
@@ -148,6 +148,54 @@ export default cf.merge(
                     }],
                     ContainerDefinitions: [{
                         Name: 'api',
+                        Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
+                        MountPoints: [{
+                            ContainerPath: '/opt/mediamtx',
+                            SourceVolume: cf.stackName
+                        }],
+                        PortMappings: PORTS.map((port) => {
+                            return {
+                                ContainerPort: port.Port,
+                                Protocol: port.Protocol
+                            }
+                        }),
+                        Environment: [
+                            { Name: 'StackName', Value: cf.stackName },
+                            { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
+                        ],
+                        LogConfiguration: {
+                            LogDriver: 'awslogs',
+                            Options: {
+                                'awslogs-group': cf.stackName,
+                                'awslogs-region': cf.region,
+                                'awslogs-stream-prefix': cf.stackName,
+                                'awslogs-create-group': true
+                            }
+                        },
+                        Essential: true
+                    }]
+                }
+            },
+            /**
+             * Task Definitions can be started manually, these won't be part of the service,
+             * won't be connected to EFS and will manage their own config
+             */
+            TaskDefinition: {
+                Type: 'AWS::ECS::TaskDefinition',
+                Properties: {
+                    Family: cf.join([cf.stackName, '-task']),
+                    Cpu: 1024,
+                    Memory: 4096 * 2,
+                    NetworkMode: 'awsvpc',
+                    RequiresCompatibilities: ['FARGATE'],
+                    Tags: [{
+                        Key: 'Name',
+                        Value: cf.join('-', [cf.stackName, 'api'])
+                    }],
+                    ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
+                    TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
+                    ContainerDefinitions: [{
+                        Name: 'task',
                         Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
                         PortMappings: PORTS.map((port) => {
                             return {
@@ -241,7 +289,7 @@ export default cf.merge(
                 Properties: {
                     ServiceName: cf.join('-', [cf.stackName, 'Service']),
                     Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
-                    TaskDefinition: cf.ref('TaskDefinition'),
+                    TaskDefinition: cf.ref('ServiceTaskDefinition'),
                     LaunchType: 'FARGATE',
                     PropagateTags: 'SERVICE',
                     DesiredCount: 1,
