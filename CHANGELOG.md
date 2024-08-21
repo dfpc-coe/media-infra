@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.1.0
+
+- :tada: Add TLS Certificate for API
+
 ### v2.0.0
 
 - :rocket: Build out ECS Service
