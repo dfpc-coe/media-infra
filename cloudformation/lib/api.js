@@ -101,7 +101,7 @@ export default cf.merge(
                     Port: 9997,
                     Protocol: 'TCP',
                     TargetType: 'ip',
-                    VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+                    VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
                 }
             },
             ListenerRTSP: {
@@ -123,7 +123,7 @@ export default cf.merge(
                     Port: 8554,
                     Protocol: 'TCP',
                     TargetType: 'ip',
-                    VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+                    VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
                 }
             },
             ServiceTaskDefinition: {
@@ -157,7 +157,7 @@ export default cf.merge(
                             return {
                                 ContainerPort: port.Port,
                                 Protocol: port.Protocol
-                            }
+                            };
                         }),
                         Environment: [
                             { Name: 'StackName', Value: cf.stackName },
@@ -201,7 +201,7 @@ export default cf.merge(
                             return {
                                 ContainerPort: port.Port,
                                 Protocol: port.Protocol
-                            }
+                            };
                         }),
                         Environment: [
                             { Name: 'StackName', Value: cf.stackName },
