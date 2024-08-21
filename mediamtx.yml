@@ -10,14 +10,10 @@ writeTimeout: 10s
 writeQueueSize: 512
 udpMaxPayloadSize: 1472
 
-# Authentication method. Available values are:
-# * internal: users are stored in the configuration file
-# * http: an external HTTP URL is contacted to perform authentication
-# * jwt: an external identity server provides authentication through JWTs
 authMethod: internal
 authInternalUsers:
-- user: any
-  ips: []
+- user: management
+  pass: testingPassword
   permissions:
   - action: publish
   - action: read
@@ -25,6 +21,10 @@ authInternalUsers:
   - action: api
   - action: metrics
   - action: pprof
+- user: any
+  permissions:
+  - action: publish
+  - action: read
 
 api: yes
 apiAddress: :9997

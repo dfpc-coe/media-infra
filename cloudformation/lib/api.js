@@ -32,6 +32,12 @@ const PORTS = [{
 
 export default cf.merge(
     {
+        Parameters: {
+            SSLCertificateIdentifier: {
+                Description: 'ACM SSL Certificate for HTTP Protocol',
+                Type: 'String'
+            }
+        },
         Resources: {
             Logs: {
                 Type: 'AWS::Logs::LogGroup',
@@ -85,13 +91,16 @@ export default cf.merge(
             ListenerAPI: {
                 Type: 'AWS::ElasticLoadBalancingV2::Listener',
                 Properties: {
+                    Certificates: [{
+                        CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                    }],
                     DefaultActions: [{
                         Type: 'forward',
                         TargetGroupArn: cf.ref('TargetGroupAPI')
                     }],
                     LoadBalancerArn: cf.ref('ELB'),
                     Port: 9997,
-                    Protocol: 'TCP'
+                    Protocol: 'TLS'
                 }
             },
             TargetGroupAPI: {
