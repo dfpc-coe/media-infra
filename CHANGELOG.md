@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v2.0.0
+
+- :rocket: Build out ECS Service
+- :tada: **Breaking** Seperate TaskDefinition between `-task` & `-service`
+
 ### v1.4.0
 
 - :rocket: Expose API Port
