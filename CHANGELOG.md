@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.2.0
+
+- :tada: Add Secret for future API Access
+
 ### v2.1.0
 
 - :tada: Add TLS Certificate for API

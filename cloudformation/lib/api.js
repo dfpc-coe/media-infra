@@ -39,6 +39,18 @@ export default cf.merge(
             }
         },
         Resources: {
+            MasterSecret: {
+                Type: 'AWS::SecretsManager::Secret',
+                Properties: {
+                    Description: cf.join([cf.stackName, ' API Password']),
+                    GenerateSecretString: {
+                        ExcludePunctuation: true,
+                        PasswordLength: 32
+                    },
+                    Name: cf.join([cf.stackName, '/api/password']),
+                    KmsKeyId: cf.ref('KMS')
+                }
+            },
             Logs: {
                 Type: 'AWS::Logs::LogGroup',
                 Properties: {
