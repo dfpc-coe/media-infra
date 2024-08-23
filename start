@@ -7,7 +7,7 @@ set -x
 set -euo pipefail
 
 # Copy EFS Persisted certs to Let's Encrypt Dir
-if [ -e "/opt/mediamtx/mediamtx.yml" ]; then
+if [ ! -e "/opt/mediamtx/mediamtx.yml" ]; then
     cp "/mediamtx.yml" "/opt/mediamtx/mediamtx.yml"
 fi;
 
