@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.3.0
+
+- :tada: Load Initial Config if one doesn't exist otherwise load from volume
+
 ### v2.2.0
 
 - :tada: Add Secret for future API Access
