@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.4.0
+
+- :rocket: Expose all ports dynamically via PORTS array
+
 ### v2.3.0
 
 - :tada: Load Initial Config if one doesn't exist otherwise load from volume
