@@ -40,7 +40,7 @@ const PORTS = [{
     Protocol: 'tcp',
     Description: 'HLS Protocol',
     Certificate: false,
-    Enabled: false
+    Enabled: true
 },{
     Name: 'WEBRTC',
     Port: 8889,
@@ -352,7 +352,14 @@ for (const p of PORTS) {
             Port: p.Port,
             Protocol: p.Protocol.toUpperCase(),
             TargetType: 'ip',
-            VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+            VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+
+            HealthCheckEnabled: true,
+            HealthCheckIntervalSeconds: 30,
+            HealthCheckPort: 8554,
+            HealthCheckProtocol: 'TCP',
+            HealthCheckTimeoutSeconds: 10,
+            HealthyThresholdCount: 5,
         }
     };
 }
