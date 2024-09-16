@@ -4,7 +4,7 @@ ENV MEDIA_VERSION=1.9.1
 
 RUN apk add bash vim
 
-COPY mediamtx.yml /
+COPY mediamtx.yml /mediamtx.base.yml
 
 COPY start /
 
