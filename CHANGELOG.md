@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.5.0
+
+- :rocket: Consistent API responses
+
 ### v2.4.0
 
 - :rocket: Expose all ports dynamically via PORTS array
