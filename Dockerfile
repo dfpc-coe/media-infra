@@ -1,14 +1,8 @@
-FROM ubuntu:24.04
+FROM bluenviron/mediamtx:1.9.0-ffmpeg
 
 ENV MEDIA_VERSION=1.9.1
 
-RUN apt-get upgrade \
-    && apt-get update \
-    && apt-get install -y curl ffmpeg libavcodec60 ubuntu-restricted-extras
-
-RUN curl -L "https://github.com/bluenviron/mediamtx/releases/download/v${MEDIA_VERSION}/mediamtx_v${MEDIA_VERSION}_linux_amd64.tar.gz" > /archive.tar.gz \
-    && tar -xzvf /archive.tar.gz \
-    && rm /archive.tar.gz
+RUN apk add bash vim
 
 COPY mediamtx.yml /
 
