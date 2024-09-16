@@ -347,6 +347,12 @@ for (const p of PORTS) {
         DependsOn: 'ELB',
         Properties: {
             Port: p.Port,
+            HealthCheckPort: 9997,
+            HealthCheckProtocol: 'HTTP',
+            HealthCheckPath: '/',
+            Matcher: {
+                HttpCode: '200-499'
+            },
             Protocol: p.Protocol.toUpperCase(),
             TargetType: 'ip',
             VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))

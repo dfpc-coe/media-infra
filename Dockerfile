@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-ENV MEDIA_VERSION=1.8.5
+ENV MEDIA_VERSION=1.9.1
 
 RUN apt-get upgrade \
     && apt-get update \
