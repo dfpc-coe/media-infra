@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.6.0
+
+- :rocket: Support for proxying HLS Streams
+
 ### v2.5.0
 
 - :rocket: Consistent API responses
