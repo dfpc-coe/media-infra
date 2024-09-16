@@ -39,7 +39,7 @@ const PORTS = [{
     Port: 8888,
     Protocol: 'tcp',
     Description: 'HLS Protocol',
-    Certificate: false,
+    Certificate: true,
     Enabled: true
 },{
     Name: 'WEBRTC',
