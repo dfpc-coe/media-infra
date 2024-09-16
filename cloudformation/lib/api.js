@@ -5,19 +5,22 @@ const PORTS = [{
     Port: 9997,
     Protocol: 'tcp',
     Description: 'API Access - HTTP',
-    Certificate: true
+    Certificate: true,
+    Enabled: true
 },{
     Name: 'RTSP',
     Port: 8554,
     Protocol: 'tcp',
     Description: 'RTSP Protocol',
-    Certificate: false
+    Certificate: false,
+    Enabled: true
 },{
     Name: 'RTSPS',
     Port: 8322,
     Protocol: 'tcp',
     Description: 'RTSPS Protocol',
-    Certificate: false
+    Certificate: false,
+    Enabled: false
 },{
     Name: 'RTMP',
     Port: 1935,
@@ -29,26 +32,32 @@ const PORTS = [{
     Port: 1936,
     Protocol: 'tcp',
     Description: 'RTMPS Protocol',
-    Certificate: false
+    Certificate: false,
+    Enabled: false
 },{
     Name: 'HLS',
     Port: 8888,
     Protocol: 'tcp',
     Description: 'HLS Protocol',
-    Certificate: false
+    Certificate: false,
+    Enabled: false
 },{
     Name: 'WEBRTC',
     Port: 8889,
     Protocol: 'tcp',
     Description: 'WebRTC Protocol',
-    Certificate: false
+    Certificate: false,
+    Enabled: false
 },{
     Name: 'SRT',
     Port: 8890,
     Protocol: 'udp',
     Description: 'SRT Protocol',
-    Certificate: false
-}];
+    Certificate: false,
+    Enabled: false
+}].filter((p) => {
+    return p.Enabled;
+});
 
 const Resources = {
     MasterSecret: {
@@ -289,19 +298,13 @@ const Resources = {
                     ]
                 }
             },
-            LoadBalancers: [{
-                ContainerName: 'api',
-                ContainerPort: 8888,
-                TargetGroupArn: cf.ref('TargetGroupHLS')
-            },{
-                ContainerName: 'api',
-                ContainerPort: 8554,
-                TargetGroupArn: cf.ref('TargetGroupRTSP')
-            },{
-                ContainerName: 'api',
-                ContainerPort: 9997,
-                TargetGroupArn: cf.ref('TargetGroupAPI')
-            }]
+            LoadBalancers: PORTS.map((p) => {
+                return {
+                    ContainerName: 'api',
+                    ContainerPort: p.Port,
+                    TargetGroupArn: cf.ref(`TargetGroup${p.Name}`)
+                };
+            })
         }
     },
     ServiceSecurityGroup: {
@@ -323,7 +326,7 @@ const Resources = {
             })
         }
     }
-}
+};
 
 for (const p of PORTS) {
     Resources[`Listener${p.Name}`] = {
@@ -347,12 +350,6 @@ for (const p of PORTS) {
         DependsOn: 'ELB',
         Properties: {
             Port: p.Port,
-            HealthCheckPort: 9997,
-            HealthCheckProtocol: 'HTTP',
-            HealthCheckPath: '/',
-            Matcher: {
-                HttpCode: '200-499'
-            },
             Protocol: p.Protocol.toUpperCase(),
             TargetType: 'ip',
             VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
@@ -368,4 +365,4 @@ export default cf.merge({
         }
     },
     Resources
-})
+});
