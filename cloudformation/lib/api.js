@@ -372,5 +372,11 @@ export default cf.merge({
             Type: 'String'
         }
     },
+    Outputs: {
+        ManagementPassword: {
+            Description: 'Video Server Management Password',
+            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}')
+        }
+    },
     Resources
 });
