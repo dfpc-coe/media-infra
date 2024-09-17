@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.7.0
+
+- :rocket: Use password from Secret Store
+
 ### v2.6.0
 
 - :rocket: Support for proxying HLS Streams
