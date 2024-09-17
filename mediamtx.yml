@@ -41,19 +41,19 @@ rtspAddress: :8554
 rtspsAddress: :8322
 rtspAuthMethods: [basic]
 
-rtmp: yes
+rtmp: no
 rtmpAddress: :1935
 rtmpEncryption: "no"
 rtmpsAddress: :1936
 
-hls: no
+hls: yes
 hlsAddress: :8888
 hlsEncryption: no
 
-webrtc: yes
+webrtc: no
 webrtcAddress: :8889
 webrtcEncryption: no
 webrtcAllowOrigin: '*'
 
-srt: yes
+srt: no
 srtAddress: :8890

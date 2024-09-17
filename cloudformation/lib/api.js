@@ -156,6 +156,7 @@ const Resources = {
                 }),
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
+                    { Name: 'MANAGEMENT_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}') },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {

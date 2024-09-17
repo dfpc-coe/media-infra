@@ -7,12 +7,16 @@ set -x
 set -euo pipefail
 
 echo "Contents:"
-ls /opt/mediamtx /
+ls /opt/mediamtx/
 
 # Copy EFS Persisted certs to Let's Encrypt Dir
 if [ ! -f "/opt/mediamtx/mediamtx.yml" ]; then
     echo "NO CONFIG FOUND"
     cp "/mediamtx.base.yml" "/opt/mediamtx/mediamtx.yml"
 fi;
+
+yq e -i '.authInternalUsers[0].pass = "MANAGEMENT_PASSWORD"' "/opt/mediamtx/mediamtx.yml"
+
+rm /mediamtx.yml
 
 /mediamtx /opt/mediamtx/mediamtx.yml
