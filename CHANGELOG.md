@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.7.1
+
+- :bug: Fix bug in password setting
+
 ### v2.7.0
 
 - :rocket: Use password from Secret Store
