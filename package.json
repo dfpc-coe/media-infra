@@ -2,7 +2,7 @@
     "name": "@tak-ps/media-infra",
     "type": "module",
     "private": true,
-    "version": "2.7.1",
+    "version": "2.8.0",
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
         "lint": "eslint cloudformation/*.js cloudformation/lib/*.js",
