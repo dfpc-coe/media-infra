@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.8.0
+
+- :rocket: Add RTMP
+
 ### v2.7.1
 
 - :bug: Fix bug in password setting
