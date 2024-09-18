@@ -41,7 +41,7 @@ rtspAddress: :8554
 rtspsAddress: :8322
 rtspAuthMethods: [basic]
 
-rtmp: no
+rtmp: yes
 rtmpAddress: :1935
 rtmpEncryption: "no"
 rtmpsAddress: :1936

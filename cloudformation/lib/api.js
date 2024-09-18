@@ -26,7 +26,8 @@ const PORTS = [{
     Port: 1935,
     Protocol: 'tcp',
     Description: 'RTMP Protocol',
-    Certificate: false
+    Certificate: false,
+    Enabled: true
 },{
     Name: 'RTMPS',
     Port: 1936,
