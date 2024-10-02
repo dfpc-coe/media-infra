@@ -361,7 +361,7 @@ for (const p of PORTS) {
             HealthCheckPort: 8554,
             HealthCheckProtocol: 'TCP',
             HealthCheckTimeoutSeconds: 10,
-            HealthyThresholdCount: 5,
+            HealthyThresholdCount: 5
         }
     };
 }
