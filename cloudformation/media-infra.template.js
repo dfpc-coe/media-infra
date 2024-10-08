@@ -2,10 +2,9 @@ import cf from '@openaddresses/cloudfriend';
 import API from './lib/api.js';
 import EFS from './lib/efs.js';
 import KMS from './lib/kms.js';
-import Secret from './lib/secret.js';
 
 export default cf.merge(
-    API, EFS, KMS, Secret,
+    API, EFS, KMS,
     {
         Description: 'Template for @tak-ps/media-infra',
         Parameters: {
