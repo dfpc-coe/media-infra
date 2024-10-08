@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.9.1
+
+- :bug: Flip Resource name
+
 ### v2.9.0
 
 - :rocket: Remove unused AWS Secret

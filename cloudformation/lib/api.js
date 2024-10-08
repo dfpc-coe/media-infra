@@ -61,7 +61,7 @@ const PORTS = [{
 });
 
 const Resources = {
-    MasterSecret: {
+    SigningSecret: {
         Type: 'AWS::SecretsManager::Secret',
         Properties: {
             Description: cf.join([cf.stackName, ' API Password']),
@@ -69,7 +69,7 @@ const Resources = {
                 ExcludePunctuation: true,
                 PasswordLength: 32
             },
-            Name: cf.join([cf.stackName, '/api/password']),
+            Name: cf.join([cf.stackName, '/api/secret']),
             KmsKeyId: cf.ref('KMS')
         }
     },
