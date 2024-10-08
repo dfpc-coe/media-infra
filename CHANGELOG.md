@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.9.0
+
+- :rocket: Remove unused AWS Secret
+
 ### v2.8.0
 
 - :rocket: Add RTMP
