@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.10.0
+
+- :rocket: Add KMS Key Alias
+
 ### v2.9.1
 
 - :bug: Flip Resource name
