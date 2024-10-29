@@ -19,4 +19,6 @@ yq e -i ".authInternalUsers[0].pass = \"$MANAGEMENT_PASSWORD\"" "/opt/mediamtx/m
 
 rm /mediamtx.yml
 
+npx tsx persist.ts "/opt/mediamtx/mediamtx.yml" &
+
 /mediamtx /opt/mediamtx/mediamtx.yml
