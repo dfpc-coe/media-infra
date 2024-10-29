@@ -4,8 +4,14 @@ ENV MEDIA_VERSION=1.9.1
 
 RUN apk add bash vim yq nodejs npm
 
-COPY mediamtx.yml /mediamtx.base.yml
+ADD mediamtx.yml /mediamtx.base.yml
+ADD start /
 
-COPY start /
+ADD package.json /
+ADD package-lock.json /
+
+RUN npm install
+
+ADD persist.ts /
 
 ENTRYPOINT [ "/start" ]
