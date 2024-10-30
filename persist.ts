@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
@@ -8,7 +9,7 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 
         base.paths = paths;
 
-        console.log(YAML.stringify(base))
+        await fs.writeFile('/opt/mediamtx/mediamtx.yml', YAML.stringify(base));
     } catch (err) {
         consoe.error(err);
     }
