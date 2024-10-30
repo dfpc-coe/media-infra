@@ -9,7 +9,13 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 
         base.paths = paths;
 
-        await fs.writeFile('/opt/mediamtx/mediamtx.yml', YAML.stringify(base));
+        await fs.writeFile('/opt/mediamtx/mediamtx.yml', YAML.stringify(base, (key, value) => {
+            if (value instanceof Boolean) {
+                return value === true ? 'yes' : 'no'
+            } else {
+                return value
+            }
+        }))
     } catch (err) {
         consoe.error(err);
     }
