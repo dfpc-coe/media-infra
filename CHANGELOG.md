@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.11.0
+
+- :rocket: Add persistance script
+
 ### v2.10.0
 
 - :rocket: Add KMS Key Alias
