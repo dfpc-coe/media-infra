@@ -6,7 +6,7 @@
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
         "check": "tsx persist.ts",
-        "lint": "eslint cloudformation/",
+        "lint": "eslint persist.ts cloudformation/",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "engines": {
