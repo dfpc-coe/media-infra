@@ -15,6 +15,7 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 });
 
 async function globalPaths(): any {
+    let total = 0;
     let page = -1;
     let res: any;
 
@@ -36,8 +37,10 @@ async function globalPaths(): any {
 
         const body = await res.json();
 
+        total = body.itemCount;
+
         paths.push(...body.items);
-    } while (res.itemCount > page * 1000)
+    } while (total > page * 1000)
 
     return paths;
 }
