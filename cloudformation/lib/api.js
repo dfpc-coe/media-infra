@@ -158,6 +158,7 @@ const Resources = {
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
                     { Name: 'MANAGEMENT_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}') },
+                    { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {
@@ -380,6 +381,12 @@ export default cf.merge({
     Parameters: {
         EnableExecute: {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
+            Type: 'String',
+            AllowedValues: ['true', 'false'],
+            Default: 'false'
+        },
+        ForceNewConfig: {
+            Description: 'Force a blank config file - permanently deleting current config',
             Type: 'String',
             AllowedValues: ['true', 'false'],
             Default: 'false'

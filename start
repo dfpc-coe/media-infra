@@ -9,6 +9,10 @@ set -euo pipefail
 echo "Contents:"
 ls /opt/mediamtx/
 
+if [[ ${FORCE_NEW_CONFIG} == "true" ]]; then
+    rm /opt/mediamtx/mediamtx.yml || true
+fi
+
 # Copy EFS Persisted certs to Let's Encrypt Dir
 if [ ! -f "/opt/mediamtx/mediamtx.yml" ]; then
     echo "NO CONFIG FOUND"
