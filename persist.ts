@@ -10,14 +10,19 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         base.paths = {};
 
         const config = YAML.stringify(base, (key, value) => {
-            if (['encryption', 'rtmpEncryption'].includes(key)) {
-                return `"${value}"`
-            } else if (typeof value === 'boolean') {
+            if (typeof value === 'boolean') {
                 return value === true ? 'yes' : 'no'
             } else {
                 return value
             }
         })
+
+        // This is janky but MediaMTX wants `no` as a string and not a boolean
+        // and I can't get the YAML library to respect that...
+        config = config
+            .replace(/^encryption: no/, 'encryption: "no"')
+            .replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"')
+
 
         console.log('PATHS', paths);
         console.log(config);
