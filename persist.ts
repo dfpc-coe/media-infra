@@ -7,15 +7,20 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         const base = await globalConfig();
         const paths = await globalPaths();
 
-        base.paths = paths;
+        base.paths = {};
 
         const config = YAML.stringify(base, (key, value) => {
-            if (typeof value === 'boolean') {
+            if (['encryption', 'rtmpEncryption'].includes(key)) {
+                return `"${value}"`
+            } else if (typeof value === 'boolean') {
                 return value === true ? 'yes' : 'no'
             } else {
                 return value
             }
         })
+
+        console.log('PATHS', paths);
+        console.log(config);
 
         await fs.writeFile('/opt/mediamtx/mediamtx.yml', config);
     } catch (err) {
