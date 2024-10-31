@@ -9,7 +9,7 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 
         base.paths = {};
 
-        const config = YAML.stringify(base, (key, value) => {
+        let config = YAML.stringify(base, (key, value) => {
             if (typeof value === 'boolean') {
                 return value === true ? 'yes' : 'no'
             } else {
