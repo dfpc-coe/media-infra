@@ -17,9 +17,9 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             }
         })
 
-        console.error(JSON.stringify(config))
+        console.error(config)
 
-        await fs.writeFile('/opt/mediamtx/mediamtx.yml', config);
+        // await fs.writeFile('/opt/mediamtx/mediamtx.yml', config);
     } catch (err) {
         console.error(err);
     }
