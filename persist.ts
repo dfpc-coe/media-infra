@@ -31,7 +31,13 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             return line;
         }).join('\n');
 
-        await fs.writeFile('/opt/mediamtx/mediamtx.yml', config);
+        await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
+
+        // Ref: https://github.com/bluenviron/mediamtx/issues/937
+        await fs.rename(
+            '/opt/mediamtx/mediamtx.yml.new',
+            '/opt/mediamtx/mediamtx.yml'
+        );
     } catch (err) {
         console.error(err);
     }
