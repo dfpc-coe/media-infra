@@ -2,7 +2,7 @@
     "name": "@tak-ps/media-infra",
     "type": "module",
     "private": true,
-    "version": "2.11.0",
+    "version": "2.12.0",
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
         "check": "tsx persist.ts",
