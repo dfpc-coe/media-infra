@@ -5,7 +5,13 @@ import YAML from 'yaml';
 cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
     try {
         const base = await globalConfig();
-        const paths = await globalPaths();
+        const paths = (await globalPaths()).map((path) => {
+            return {
+                name: path.name,
+                source: path.source,
+                sourceOnDemand: path.sourceOnDemand
+            };
+        });
 
         base.paths = {};
 
