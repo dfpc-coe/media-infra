@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.12.0
+
+- :rocket: Finish persistance script
+
 ### v2.11.0
 
 - :rocket: Add persistance script
