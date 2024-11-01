@@ -9,25 +9,25 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 
         base.paths = {};
 
+        for (const path of paths) {
+            base.paths[path.name] = path;
+        }
+
         let config = YAML.stringify(base, (key, value) => {
             if (typeof value === 'boolean') {
-                return value === true ? 'yes' : 'no'
+                return value === true ? 'yes' : 'no';
             } else {
-                return value
+                return value;
             }
-        })
+        });
 
         // This is janky but MediaMTX wants `no` as a string and not a boolean
         // and I can't get the YAML library to respect that...
         config = config.split('\n').map((line) => {
-            line = line.replace(/^encryption: no/, 'encryption: "no"')
-            line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"')
-            return line
+            line = line.replace(/^encryption: no/, 'encryption: "no"');
+            line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
+            return line;
         }).join('\n');
-
-        for (const path of paths) {
-            base.paths[path.name] = path;
-        }
 
         console.log(config);
 
@@ -40,7 +40,6 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 async function globalPaths(): any {
     let total = 0;
     let page = -1;
-    let res: any;
 
     const paths = [];
 
@@ -56,14 +55,14 @@ async function globalPaths(): any {
             headers: {
                 Authorization: `Basic ${Buffer.from('management:' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
             }
-        })
+        });
 
         const body = await res.json();
 
         total = body.itemCount;
 
         paths.push(...body.items);
-    } while (total > page * 1000)
+    } while (total > page * 1000);
 
     return paths;
 }
@@ -74,7 +73,7 @@ async function globalConfig(): any {
         headers: {
             Authorization: `Basic ${Buffer.from('management:' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
         }
-    })
+    });
 
     const body = await res.json();
 

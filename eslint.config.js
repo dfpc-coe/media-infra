@@ -1,11 +1,14 @@
 import js from "@eslint/js";
 import nodePlugin from "eslint-plugin-n";
+import tseslint from 'typescript-eslint';
 
 export default [
     js.configs.recommended,
     nodePlugin.configs["flat/recommended-module"],
+    ...tseslint.configs.recommended,
     {
         "rules": {
+            "@typescript-eslint/no-explicit-any": "warn",
             "no-console": 0,
             "arrow-parens": [ "error", "always" ],
             "no-var": "error",
