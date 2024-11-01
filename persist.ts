@@ -25,8 +25,10 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             return line
         }).join('\n');
 
+        for (const path of paths) {
+            base.paths[path.name] = path;
+        }
 
-        console.log('PATHS', paths);
         console.log(config);
 
         await fs.writeFile('/opt/mediamtx/mediamtx.yml', config);
