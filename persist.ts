@@ -13,6 +13,8 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             base.paths[path.name] = path;
         }
 
+        console.error('PATHS', JSON.stringify(base.paths));
+
         let config = YAML.stringify(base, (key, value) => {
             if (typeof value === 'boolean') {
                 return value === true ? 'yes' : 'no';
@@ -28,8 +30,6 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
             return line;
         }).join('\n');
-
-        console.log(config);
 
         await fs.writeFile('/opt/mediamtx/mediamtx.yml', config);
     } catch (err) {
