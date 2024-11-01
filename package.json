@@ -2,14 +2,15 @@
     "name": "@tak-ps/media-infra",
     "type": "module",
     "private": true,
-    "version": "2.10.0",
+    "version": "2.11.0",
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
-        "lint": "eslint cloudformation/*.js cloudformation/lib/*.js",
+        "check": "tsx persist.ts",
+        "lint": "eslint persist.ts cloudformation/",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "engines": {
-        "node": ">= 18"
+        "node": ">= 22"
     },
     "repository": {
         "type": "git",
@@ -24,10 +25,15 @@
     "dependencies": {
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
-        "@openaddresses/deploy": "^8.0.0"
+        "@openaddresses/deploy": "^9.1.0",
+        "node-cron": "^3.0.3",
+        "tsx": "^4.19.2",
+        "yaml": "^2.6.0"
     },
     "devDependencies": {
         "eslint": "^9.9.0",
-        "eslint-plugin-n": "^17.10.2"
+        "eslint-plugin-n": "^17.10.2",
+        "typescript": "^5.6.3",
+        "typescript-eslint": "^8.12.2"
     }
 }

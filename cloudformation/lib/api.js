@@ -158,6 +158,7 @@ const Resources = {
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
                     { Name: 'MANAGEMENT_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}') },
+                    { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {
@@ -270,6 +271,15 @@ const Resources = {
                     Statement: [{
                         Effect: 'Allow',
                         Action: [
+                            'ssmmessages:CreateControlChannel',
+                            'ssmmessages:CreateDataChannel',
+                            'ssmmessages:OpenControlChannel',
+                            'ssmmessages:OpenDataChannel'
+                        ],
+                        Resource: '*'
+                    },{
+                        Effect: 'Allow',
+                        Action: [
                             'logs:CreateLogGroup',
                             'logs:CreateLogStream',
                             'logs:PutLogEvents',
@@ -289,6 +299,7 @@ const Resources = {
             TaskDefinition: cf.ref('ServiceTaskDefinition'),
             LaunchType: 'FARGATE',
             PropagateTags: 'SERVICE',
+            EnableExecuteCommand: cf.ref('EnableExecute'),
             DesiredCount: 1,
             NetworkConfiguration: {
                 AwsvpcConfiguration: {
@@ -368,6 +379,18 @@ for (const p of PORTS) {
 
 export default cf.merge({
     Parameters: {
+        EnableExecute: {
+            Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
+            Type: 'String',
+            AllowedValues: ['true', 'false'],
+            Default: 'false'
+        },
+        ForceNewConfig: {
+            Description: 'Force a blank config file - permanently deleting current config',
+            Type: 'String',
+            AllowedValues: ['true', 'false'],
+            Default: 'false'
+        },
         SSLCertificateIdentifier: {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
