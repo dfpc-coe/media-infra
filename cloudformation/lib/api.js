@@ -369,8 +369,8 @@ for (const p of PORTS) {
 
             HealthCheckEnabled: true,
             HealthCheckIntervalSeconds: 30,
-            HealthCheckPort: 8554,
-            HealthCheckProtocol: 'TCP',
+            HealthCheckPort: p.Port,
+            HealthCheckProtocol: p.Protocol.toUpperCase(),
             HealthCheckTimeoutSeconds: 10,
             HealthyThresholdCount: 5
         }
