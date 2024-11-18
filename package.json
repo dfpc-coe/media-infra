@@ -5,7 +5,7 @@
     "version": "2.12.0",
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
-        "check": "tsx persist.ts",
+        "build": "tsc",
         "lint": "eslint persist.ts cloudformation/",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -26,11 +26,14 @@
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",
+        "json-diff": "^1.0.6",
         "node-cron": "^3.0.3",
         "tsx": "^4.19.2",
         "yaml": "^2.6.0"
     },
     "devDependencies": {
+        "@types/json-diff": "^1.0.3",
+        "@types/node-cron": "^3.0.11",
         "eslint": "^9.9.0",
         "eslint-plugin-n": "^17.10.2",
         "typescript": "^5.6.3",

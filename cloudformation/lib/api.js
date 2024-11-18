@@ -52,10 +52,10 @@ const PORTS = [{
 },{
     Name: 'SRT',
     Port: 8890,
-    Protocol: 'udp',
+    Protocol: 'tcp',
     Description: 'SRT Protocol',
     Certificate: false,
-    Enabled: false
+    Enabled: true
 }].filter((p) => {
     return p.Enabled;
 });
