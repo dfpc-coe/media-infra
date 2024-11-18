@@ -12,6 +12,13 @@
 
 ### Pending Release
 
+### v2.13.0
+
+- :tada: Perform JSON Diff before writing config file if a diff has been detected.
+- :rocket: Setup TS Build step and enable in GH Actions
+- :rocket: Health Check each individual port/protocol
+- :tada: Enable SRT by default
+
 ### v2.12.0
 
 - :rocket: Finish persistance script
