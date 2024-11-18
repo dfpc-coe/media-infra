@@ -42,17 +42,21 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         const currentConfig = YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml')));
         const existConfig = YAML.parse(config);
         try {
-            assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig)
+            assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
         } catch (err) {
-            console.error('DIFF:', diffString(currentConfig, existConfig));
+            if (err instanceof assert.AssertionError) {
+                console.error('DIFF:', diffString(currentConfig, existConfig));
 
-            await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
+                await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
 
-            // Ref: https://github.com/bluenviron/mediamtx/issues/937
-            await fs.rename(
-                '/opt/mediamtx/mediamtx.yml.new',
-                '/opt/mediamtx/mediamtx.yml'
-            );
+                // Ref: https://github.com/bluenviron/mediamtx/issues/937
+                await fs.rename(
+                    '/opt/mediamtx/mediamtx.yml.new',
+                    '/opt/mediamtx/mediamtx.yml'
+                );
+            } else {
+                throw err;
+            }
         }
     } catch (err) {
         console.error(err);
