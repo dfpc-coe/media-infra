@@ -55,5 +55,5 @@ webrtcAddress: :8889
 webrtcEncryption: no
 webrtcAllowOrigin: '*'
 
-srt: no
+srt: yes
 srtAddress: :8890

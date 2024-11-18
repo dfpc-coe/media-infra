@@ -21,8 +21,6 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             base.paths[path.name] = path;
         }
 
-        console.error('PATHS', JSON.stringify(base.paths));
-
         let config = YAML.stringify(base, (key, value) => {
             if (typeof value === 'boolean') {
                 return value === true ? 'yes' : 'no';
@@ -41,6 +39,7 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
 
         const currentConfig = YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml')));
         const existConfig = YAML.parse(config);
+
         try {
             assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
         } catch (err) {
