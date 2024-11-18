@@ -3,13 +3,13 @@
 # Add MediaConfig File
 #
 
-set -x
 set -euo pipefail
 
 echo "Contents:"
 ls /opt/mediamtx/
 
 if [[ ${FORCE_NEW_CONFIG} == "true" ]]; then
+    echo "Force New Config = true - deleting mediamtx.yml"
     rm /opt/mediamtx/mediamtx.yml || true
 fi
 

@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.13.1
+
+- :bug: UDP Ports health check on alternate service
+
 ### v2.13.0
 
 - :tada: Perform JSON Diff before writing config file if a diff has been detected.

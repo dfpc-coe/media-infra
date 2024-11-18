@@ -52,7 +52,7 @@ const PORTS = [{
 },{
     Name: 'SRT',
     Port: 8890,
-    Protocol: 'tcp',
+    Protocol: 'udp',
     Description: 'SRT Protocol',
     Certificate: false,
     Enabled: true
@@ -369,8 +369,9 @@ for (const p of PORTS) {
 
             HealthCheckEnabled: true,
             HealthCheckIntervalSeconds: 30,
-            HealthCheckPort: p.Port,
-            HealthCheckProtocol: p.Protocol.toUpperCase(),
+            // UDP Health checks fallback to TCP
+            HealthCheckPort: p.Protocol.toUpperCase() === 'UDP' ? '9997' : p.Port,
+            HealthCheckProtocol: p.Protocol.toUpperCase() === 'UDP' ? 'TCP' : p.Protocol.toUpperCase(),
             HealthCheckTimeoutSeconds: 10,
             HealthyThresholdCount: 5
         }
