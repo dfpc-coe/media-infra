@@ -114,7 +114,7 @@ const Resources = {
             SecurityGroupIngress: PORTS.map((port) => {
                 return {
                     CidrIp: '0.0.0.0/0',
-                    IpProtocol: 'tcp',
+                    IpProtocol: port.Protocol,
                     FromPort: port.Port,
                     ToPort: port.Port
                 };
