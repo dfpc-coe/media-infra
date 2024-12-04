@@ -331,7 +331,8 @@ const Resources = {
             VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
             SecurityGroupIngress: PORTS.map((port) => {
                 return {
-                    CidrIp: '0.0.0.0/0',
+                    Description: 'ELB Traffic',
+                    SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
                     IpProtocol: port.Protocol,
                     FromPort: port.Port,
                     ToPort: port.Port
