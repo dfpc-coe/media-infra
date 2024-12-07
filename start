@@ -21,7 +21,9 @@ fi;
 
 yq e -i ".authInternalUsers[0].pass = \"$MANAGEMENT_PASSWORD\"" "/opt/mediamtx/mediamtx.yml"
 
-rm /mediamtx.yml
+if [[ ! -f /mediamtx.yml ]]; then
+    rm /mediamtx.yml
+fi
 
 npx tsx persist.ts &
 
