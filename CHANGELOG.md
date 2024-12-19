@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.14.0
+
+- :arrow_up: Update `MediaMTX@1.10.0`
+
 ### v2.13.1
 
 - :bug: UDP Ports health check on alternate service
