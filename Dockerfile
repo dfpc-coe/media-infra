@@ -1,6 +1,4 @@
-FROM bluenviron/mediamtx:1.9.0-ffmpeg
-
-ENV MEDIA_VERSION=1.9.3
+FROM bluenviron/mediamtx:1.10.0-ffmpeg
 
 RUN apk add bash vim yq nodejs npm
 
