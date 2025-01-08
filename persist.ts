@@ -34,6 +34,7 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         config = config.split('\n').map((line) => {
             line = line.replace(/^encryption: no/, 'encryption: "no"');
             line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
+            line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
             return line;
         }).join('\n');
 
