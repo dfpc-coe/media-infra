@@ -80,11 +80,35 @@ const Resources = {
             RetentionInDays: 7
         }
     },
+    ELBEIPSubnetA: {
+        Type: 'AWS::EC2::EIP',
+        Properties: {
+            Tags: [{
+                Key: 'Name',
+                Value: cf.join([cf.stackName, '-subnet-a'])
+            }]
+        }
+    },
+    ELBEIPSubnetB: {
+        Type: 'AWS::EC2::EIP',
+        Properties: {
+            Tags: [{
+                Key: 'Name',
+                Value: cf.join([cf.stackName, '-subnet-b'])
+            }]
+        }
+    },
     ELB: {
         Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
+        DependsOn: ['ELBEIPSubnetA', 'ELBEIPSubnetB'],
         Properties: {
             Name: cf.stackName,
             Type: 'network',
+            Scheme: 'internet-facing',
+            // Disabled as DualStack currently does not support IPv6 UDP
+            // ref: https://docs.aws.amazon.com/whitepapers/latest/ipv6-on-aws/scaling-the-dual-stack-network-design-in-aws.html
+            // EnablePrefixForIpv6SourceNat: 'on',
+            // IpAddressType: 'dualstack',
             SecurityGroups: [cf.ref('ELBSecurityGroup')],
             LoadBalancerAttributes: [{
                 Key: 'access_logs.s3.enabled',
@@ -96,10 +120,13 @@ const Resources = {
                 Key: 'access_logs.s3.prefix',
                 Value: cf.stackName
             }],
-            Subnets:  [
-                cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
-                cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
-            ]
+            SubnetMappings: [{
+                AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
+                SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a']))
+            },{
+                AllocationId: cf.getAtt('ELBEIPSubnetB', 'AllocationId'),
+                SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
+            }]
         }
     },
     ELBSecurityGroup: {
@@ -293,6 +320,7 @@ const Resources = {
     },
     Service: {
         Type: 'AWS::ECS::Service',
+        DependsOn: 'ELB',
         Properties: {
             ServiceName: cf.join('-', [cf.stackName, 'Service']),
             Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
@@ -399,6 +427,14 @@ export default cf.merge({
         }
     },
     Outputs: {
+        SubnetAIP: {
+            Description: 'NLB EIP for Subnet A',
+            Value: cf.ref('ELBEIPSubnetA')
+        },
+        SubnetBIP: {
+            Description: 'NLB EIP for Subnet B',
+            Value: cf.ref('ELBEIPSubnetB')
+        },
         ManagementPassword: {
             Description: 'Video Server Management Password',
             Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}')
