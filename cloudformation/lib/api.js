@@ -322,7 +322,7 @@ const Resources = {
                     AssignPublicIp: 'ENABLED',
                     SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                     Subnets:  [
-                        cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                        cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a']))
                     ]
                 }
             },
