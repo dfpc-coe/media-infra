@@ -308,7 +308,7 @@ const Resources = {
     },
     Service: {
         Type: 'AWS::ECS::Service',
-        DependsOn: 'ELB',
+        DependsOn: PORTS.map(p => `Listener${p.Name}`),
         Properties: {
             ServiceName: cf.join('-', [cf.stackName, 'Service']),
             Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
@@ -376,7 +376,6 @@ for (const p of PORTS) {
 
     Resources[`TargetGroup${p.Name}`] = {
         Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
-        DependsOn: 'ELB',
         Properties: {
             Port: p.Port,
             Protocol: p.Protocol.toUpperCase(),

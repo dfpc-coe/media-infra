@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.16.0
+
+- :bug: Change DependsOn Strategy
+
 ### v2.15.0
 
 - :rocket: Lock to SubnetA for time being to ensure a single EIP can be used for access
