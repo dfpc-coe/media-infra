@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.15.0
+
+- :rocket: Lock to SubnetA for time being to ensure a single EIP can be used for access
+
 ### v2.14.0
 
 - :arrow_up: Update `MediaMTX@1.10.0`

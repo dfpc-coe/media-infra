@@ -89,18 +89,9 @@ const Resources = {
             }]
         }
     },
-    ELBEIPSubnetB: {
-        Type: 'AWS::EC2::EIP',
-        Properties: {
-            Tags: [{
-                Key: 'Name',
-                Value: cf.join([cf.stackName, '-subnet-b'])
-            }]
-        }
-    },
     ELB: {
         Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
-        DependsOn: ['ELBEIPSubnetA', 'ELBEIPSubnetB'],
+        DependsOn: ['ELBEIPSubnetA'],
         Properties: {
             Name: cf.stackName,
             Type: 'network',
@@ -123,9 +114,6 @@ const Resources = {
             SubnetMappings: [{
                 AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
                 SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a']))
-            },{
-                AllocationId: cf.getAtt('ELBEIPSubnetB', 'AllocationId'),
-                SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
             }]
         }
     },
@@ -335,7 +323,6 @@ const Resources = {
                     SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                     Subnets:  [
                         cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
-                        cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                     ]
                 }
             },
@@ -430,10 +417,6 @@ export default cf.merge({
         SubnetAIP: {
             Description: 'NLB EIP for Subnet A',
             Value: cf.ref('ELBEIPSubnetA')
-        },
-        SubnetBIP: {
-            Description: 'NLB EIP for Subnet B',
-            Value: cf.ref('ELBEIPSubnetB')
         },
         ManagementPassword: {
             Description: 'Video Server Management Password',
