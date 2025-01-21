@@ -308,7 +308,7 @@ const Resources = {
     },
     Service: {
         Type: 'AWS::ECS::Service',
-        DependsOn: PORTS.map(p => `Listener${p.Name}`),
+        DependsOn: PORTS.map((p) => { return `Listener${p.Name}`; }),
         Properties: {
             ServiceName: cf.join('-', [cf.stackName, 'Service']),
             Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),

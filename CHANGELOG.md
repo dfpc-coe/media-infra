@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v2.17.0
+
+- :arrow_up: Update MediaMTX to `v1.11.1`
+- :bug: Fix Lints
+
 ### v2.16.0
 
 - :bug: Change DependsOn Strategy
