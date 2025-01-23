@@ -7,7 +7,7 @@
     "scripts": {
         "build": "tsc",
         "lint": "eslint persist.ts cloudformation/",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "test/test"
     },
     "engines": {
         "node": ">= 22"
@@ -36,6 +36,7 @@
         "@types/node-cron": "^3.0.11",
         "eslint": "^9.9.0",
         "eslint-plugin-n": "^17.10.2",
+        "tape": "^5.9.0",
         "typescript": "^5.6.3",
         "typescript-eslint": "^8.12.2"
     }

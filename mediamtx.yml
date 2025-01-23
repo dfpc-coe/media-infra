@@ -22,16 +22,12 @@ authInternalUsers:
   - action: metrics
   - action: pprof
 - user: any
-  permissions:
-  - action: publish
-  - action: read
 
 api: yes
 apiAddress: :9997
 apiEncryption: no
 apiAllowOrigin: '*'
 apiTrustedProxies: []
-
 
 playback: no
 rtsp: yes

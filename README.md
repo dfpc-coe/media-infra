@@ -2,6 +2,15 @@
 
 <p align=center>Infrastructure to support a TAK Compatible Media Server</p>
 
+## Persistance
+
+MediaMTX currently does not persist API operations to the config file, as such the Dockerfile is bundled with a
+persistance script that will convert the API response and push it to the mediamtx.yml file on change
+
+By default any user can read/write to a new path that is created and the persist script will explicity add paths that
+don't have a user assigned to them under the `any` user. If a path is created alongside a user with more granular permisisons
+about using that path, the persist script will NOT add the path to the `any` user.
+
 ## Ports
 
 | Port | Notes |
