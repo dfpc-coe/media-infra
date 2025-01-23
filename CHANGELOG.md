@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v2.18.0
+
+- :white_check_mark: Add basic tests of persist script
+- :tada: Explicitly add path names to `any` user if there is not another user controlling their access
+
 ### v2.17.0
 
 - :arrow_up: Update MediaMTX to `v1.11.1`
