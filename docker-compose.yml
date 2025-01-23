@@ -1,8 +1,10 @@
-version: '3'
 services:
   api:
     platform: linux/amd64
     build: .
     restart: always
+    environment:
+      - MANAGEMENT_PASSWORD
     ports:
-    - 8554:8554
+      - 8554:8554
+      - 9997:9997

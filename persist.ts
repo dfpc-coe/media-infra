@@ -4,7 +4,38 @@ import fs from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
-cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
+if (import.meta.url === `file://${process.cwd()}/${process.argv[1]}`) {
+    schedule();
+}
+
+export function schedule() {
+    cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
+        const config = await persist();
+
+        const currentConfig = YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml')));
+        const existConfig = YAML.parse(config);
+
+        try {
+            assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
+        } catch (err) {
+            if (err instanceof assert.AssertionError) {
+                console.error('DIFF:', diffString(currentConfig, existConfig));
+
+                await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
+
+                // Ref: https://github.com/bluenviron/mediamtx/issues/937
+                await fs.rename(
+                    '/opt/mediamtx/mediamtx.yml.new',
+                    '/opt/mediamtx/mediamtx.yml'
+                );
+            } else {
+                throw err;
+            }
+        }
+    });
+}
+
+export default async function persist(): Promise<string> {
     try {
         const base = await globalConfig();
         const paths = (await globalPaths()).map((path: any) => {
@@ -38,32 +69,13 @@ cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
             return line;
         }).join('\n');
 
-        const currentConfig = YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml')));
-        const existConfig = YAML.parse(config);
-
-        try {
-            assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
-        } catch (err) {
-            if (err instanceof assert.AssertionError) {
-                console.error('DIFF:', diffString(currentConfig, existConfig));
-
-                await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
-
-                // Ref: https://github.com/bluenviron/mediamtx/issues/937
-                await fs.rename(
-                    '/opt/mediamtx/mediamtx.yml.new',
-                    '/opt/mediamtx/mediamtx.yml'
-                );
-            } else {
-                throw err;
-            }
-        }
+        return config;
     } catch (err) {
         console.error(err);
     }
-});
+}
 
-async function globalPaths(): Promise<any> {
+export async function globalPaths(): Promise<any> {
     let total = 0;
     let page = -1;
 
@@ -93,7 +105,7 @@ async function globalPaths(): Promise<any> {
     return paths;
 }
 
-async function globalConfig(): Promise<any> {
+export async function globalConfig(): Promise<any> {
     const res = await fetch('http://localhost:9997/v3/config/global/get', {
         method: 'GET',
         headers: {
