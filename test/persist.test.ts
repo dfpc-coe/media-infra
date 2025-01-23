@@ -73,6 +73,68 @@ test('Simple Paths', async (t) => {
     t.end()
 });
 
+test('Create Read/Write Path/User', async (t) => {
+    const uuid = 'pathrw';
+
+    const res = await fetch(new URL(`http://localhost:9997/v3/config/paths/add/${uuid}`), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${Buffer.from('management' + ':' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
+        },
+        body: JSON.stringify({
+            name: uuid
+        })
+    });
+
+    if (!res.ok) {
+        t.fail(await res.text());
+    }
+
+    const res2 = await fetch(new URL(`http://localhost:9997/v3/config/global/patch`), {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${Buffer.from('management' + ':' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
+        },
+        body: JSON.stringify({
+            authInternalUsers: [{
+                user: 'pathrw-publish',
+                permissions: [{
+                    action: 'publish',
+                    path: uuid
+                }]
+            },{
+                user: 'pathrw-read',
+                permissions: [{
+                    action: 'read',
+                    path: uuid
+                }]
+            }]
+        })
+    });
+
+    if (!res2.ok) {
+        t.fail(await res2.text());
+    }
+
+    t.end()
+});
+
+test('Read/Write Paths', async (t) => {
+    const config = await persist();
+
+    const fixture = new URL('./fixtures/ReadWritePaths.yml', import.meta.url);
+
+    if (UPDATE) {
+        fs.writeFileSync(fixture, config);
+    }
+
+    t.deepEqual(config, String(fs.readFileSync(fixture)));
+
+    t.end()
+});
+
 test('Stop Docker', async (t) => {
     const docker = CP.spawn('docker', ['compose', 'kill'], {
         cwd: new URL('../', import.meta.url).pathname
