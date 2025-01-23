@@ -98,8 +98,8 @@ const Resources = {
             Scheme: 'internet-facing',
             // Disabled as DualStack currently does not support IPv6 UDP
             // ref: https://docs.aws.amazon.com/whitepapers/latest/ipv6-on-aws/scaling-the-dual-stack-network-design-in-aws.html
-            // EnablePrefixForIpv6SourceNat: 'on',
-            // IpAddressType: 'dualstack',
+            EnablePrefixForIpv6SourceNat: 'on',
+            IpAddressType: 'dualstack',
             SecurityGroups: [cf.ref('ELBSecurityGroup')],
             LoadBalancerAttributes: [{
                 Key: 'access_logs.s3.enabled',
@@ -381,6 +381,8 @@ for (const p of PORTS) {
             Protocol: p.Protocol.toUpperCase(),
             TargetType: 'ip',
             VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+
+            IpAddressType: 'ipv6',
 
             HealthCheckEnabled: true,
             HealthCheckIntervalSeconds: 30,
