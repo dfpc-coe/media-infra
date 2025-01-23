@@ -38,7 +38,7 @@ test('Start Docker', async (t) => {
 
 test('Create Basic Path', async (t) => {
     for (let i = 0; i < 5; i++) {
-        const uuid = randomUUID();
+        const uuid = `path${i}`;
 
         const res = await fetch(new URL(`http://localhost:9997/v3/config/paths/add/${uuid}`), {
             method: 'POST',

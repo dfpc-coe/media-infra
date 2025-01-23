@@ -130,23 +130,23 @@ webrtcTrackGatherTimeout: 2s
 srt: yes
 srtAddress: :8890
 paths:
-  0db81d81-f6c5-45f8-8d87-f86c18e68ae6:
-    name: 0db81d81-f6c5-45f8-8d87-f86c18e68ae6
+  path0:
+    name: path0
     source: publisher
     sourceOnDemand: no
-  39e6453e-e965-4d36-9126-0a2b16fa5c18:
-    name: 39e6453e-e965-4d36-9126-0a2b16fa5c18
+  path1:
+    name: path1
     source: publisher
     sourceOnDemand: no
-  606a1f69-0125-464f-a2c8-d3d601b85d15:
-    name: 606a1f69-0125-464f-a2c8-d3d601b85d15
+  path2:
+    name: path2
     source: publisher
     sourceOnDemand: no
-  d375c8ab-291e-402c-85e7-8627fa6e63ee:
-    name: d375c8ab-291e-402c-85e7-8627fa6e63ee
+  path3:
+    name: path3
     source: publisher
     sourceOnDemand: no
-  ffe86f3a-2194-44a9-ba29-4e8b39c3f77a:
-    name: ffe86f3a-2194-44a9-ba29-4e8b39c3f77a
+  path4:
+    name: path4
     source: publisher
     sourceOnDemand: no
