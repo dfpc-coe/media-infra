@@ -2,6 +2,11 @@
 
 <p align=center>Infrastructure to support a TAK Compatible Media Server</p>
 
+## Persistance
+
+MediaMTX currently does not persist API operations to the config file, as such the Dockerfile is bundled with a
+persistance script that will convert the API response and push it to the mediamtx.yml file on change
+
 ## Ports
 
 | Port | Notes |

@@ -1,0 +1,152 @@
+logLevel: info
+logDestinations:
+  - stdout
+logFile: mediamtx.log
+readTimeout: 10s
+writeTimeout: 10s
+writeQueueSize: 512
+udpMaxPayloadSize: 1472
+runOnConnect: ""
+runOnConnectRestart: no
+runOnDisconnect: ""
+authMethod: internal
+authInternalUsers:
+  - user: management
+    pass: localtesting123
+    ips: []
+    permissions:
+      - action: publish
+        path: ""
+      - action: read
+        path: ""
+      - action: playback
+        path: ""
+      - action: api
+        path: ""
+      - action: metrics
+        path: ""
+      - action: pprof
+        path: ""
+  - user: any
+    pass: ""
+    ips: []
+    permissions:
+      - action: publish
+        path: ""
+      - action: read
+        path: ""
+authHTTPAddress: ""
+authHTTPExclude:
+  - action: api
+    path: ""
+  - action: metrics
+    path: ""
+  - action: pprof
+    path: ""
+authJWTJWKS: ""
+authJWTClaimKey: mediamtx_permissions
+api: yes
+apiAddress: :9997
+apiEncryption: no
+apiServerKey: server.key
+apiServerCert: server.crt
+apiAllowOrigin: "*"
+apiTrustedProxies: []
+metrics: no
+metricsAddress: :9998
+metricsEncryption: no
+metricsServerKey: server.key
+metricsServerCert: server.crt
+metricsAllowOrigin: "*"
+metricsTrustedProxies: []
+pprof: no
+pprofAddress: :9999
+pprofEncryption: no
+pprofServerKey: server.key
+pprofServerCert: server.crt
+pprofAllowOrigin: "*"
+pprofTrustedProxies: []
+playback: no
+playbackAddress: :9996
+playbackEncryption: no
+playbackServerKey: server.key
+playbackServerCert: server.crt
+playbackAllowOrigin: "*"
+playbackTrustedProxies: []
+rtsp: yes
+protocols:
+  - tcp
+rtspTransports:
+  - tcp
+encryption: "no"
+rtspEncryption: "no"
+rtspAddress: :8554
+rtspsAddress: :8322
+rtpAddress: :8000
+rtcpAddress: :8001
+multicastIPRange: 224.1.0.0/16
+multicastRTPPort: 8002
+multicastRTCPPort: 8003
+rtspServerKey: server.key
+rtspServerCert: server.crt
+rtspAuthMethods:
+  - basic
+rtmp: yes
+rtmpAddress: :1935
+rtmpEncryption: "no"
+rtmpsAddress: :1936
+rtmpServerKey: server.key
+rtmpServerCert: server.crt
+hls: yes
+hlsAddress: :8888
+hlsEncryption: no
+hlsServerKey: server.key
+hlsServerCert: server.crt
+hlsAllowOrigin: "*"
+hlsTrustedProxies: []
+hlsAlwaysRemux: no
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+hlsDirectory: ""
+hlsMuxerCloseAfter: 1m0s
+webrtc: no
+webrtcAddress: :8889
+webrtcEncryption: no
+webrtcServerKey: server.key
+webrtcServerCert: server.crt
+webrtcAllowOrigin: "*"
+webrtcTrustedProxies: []
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: ""
+webrtcIPsFromInterfaces: yes
+webrtcIPsFromInterfacesList: []
+webrtcAdditionalHosts: []
+webrtcICEServers2: []
+webrtcHandshakeTimeout: 10s
+webrtcTrackGatherTimeout: 2s
+srt: yes
+srtAddress: :8890
+paths:
+  0db81d81-f6c5-45f8-8d87-f86c18e68ae6:
+    name: 0db81d81-f6c5-45f8-8d87-f86c18e68ae6
+    source: publisher
+    sourceOnDemand: no
+  39e6453e-e965-4d36-9126-0a2b16fa5c18:
+    name: 39e6453e-e965-4d36-9126-0a2b16fa5c18
+    source: publisher
+    sourceOnDemand: no
+  606a1f69-0125-464f-a2c8-d3d601b85d15:
+    name: 606a1f69-0125-464f-a2c8-d3d601b85d15
+    source: publisher
+    sourceOnDemand: no
+  d375c8ab-291e-402c-85e7-8627fa6e63ee:
+    name: d375c8ab-291e-402c-85e7-8627fa6e63ee
+    source: publisher
+    sourceOnDemand: no
+  ffe86f3a-2194-44a9-ba29-4e8b39c3f77a:
+    name: ffe86f3a-2194-44a9-ba29-4e8b39c3f77a
+    source: publisher
+    sourceOnDemand: no

@@ -52,6 +52,32 @@ export default async function persist(): Promise<string> {
             base.paths[path.name] = path;
         }
 
+        // Calculate paths which are already handled by a user
+        const handledPaths = new Set();
+        for (const user of base.authInternalUsers) {
+            if (user.user !== 'any') {
+                for (const perm of user.permissions) {
+                    if (perm.path && perm.path.length) {
+                        handledPaths.set(perm.path);
+                    }
+                }
+            }
+        }
+
+        // Paths that aren't explicitly handled are allowed read/publish
+        for (const user of base.authInternalUsers) {
+            if (user.user === 'any') {
+                const permissions = [];
+
+                for (const path of paths) {
+                    if (!handledPaths.has(path.name)) {
+                        permissions.push({ action: 'read', path: path.name });
+                        permissions.push({ action: 'publish', path: path.name });
+                    }
+                }
+            }
+        }
+
         let config = YAML.stringify(base, (key, value) => {
             if (typeof value === 'boolean') {
                 return value === true ? 'yes' : 'no';
