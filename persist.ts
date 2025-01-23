@@ -36,71 +36,67 @@ export function schedule() {
 }
 
 export default async function persist(): Promise<string> {
-    try {
-        const base = await globalConfig();
-        const paths = (await globalPaths()).map((path: any) => {
-            return {
-                name: path.name,
-                source: path.source,
-                sourceOnDemand: path.sourceOnDemand
-            };
-        });
+    const base = await globalConfig();
+    const paths = (await globalPaths()).map((path: any) => {
+        return {
+            name: path.name,
+            source: path.source,
+            sourceOnDemand: path.sourceOnDemand
+        };
+    });
 
-        base.paths = {};
+    base.paths = {};
 
-        for (const path of paths) {
-            base.paths[path.name] = path;
-        }
-
-        // Calculate paths which are already handled by a user
-        const handledPaths = new Set();
-        for (const user of base.authInternalUsers) {
-            if (user.user !== 'any') {
-                for (const perm of user.permissions) {
-                    if (perm.path && perm.path.length) {
-                        handledPaths.add(perm.path);
-                    }
-                }
-            }
-        }
-
-        // Paths that aren't explicitly handled are allowed read/publish
-        for (const user of base.authInternalUsers) {
-            if (user.user === 'any') {
-                const permissions = [];
-
-                for (const path of paths) {
-                    if (!handledPaths.has(path.name)) {
-                        permissions.push({ action: 'read', path: path.name });
-                        permissions.push({ action: 'publish', path: path.name });
-                    }
-                }
-
-                user.permissions = permissions;
-            }
-        }
-
-        let config = YAML.stringify(base, (key, value) => {
-            if (typeof value === 'boolean') {
-                return value === true ? 'yes' : 'no';
-            } else {
-                return value;
-            }
-        });
-
-        // This is janky but MediaMTX wants `no` as a string and not a boolean
-        // and I can't get the YAML library to respect that...
-        config = config.split('\n').map((line) => {
-            line = line.replace(/^encryption: no/, 'encryption: "no"');
-            line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
-            line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
-            return line;
-        }).join('\n');
-
-        return config;
-    } catch (err) {
-        console.error(err);
+    for (const path of paths) {
+        base.paths[path.name] = path;
     }
+
+    // Calculate paths which are already handled by a user
+    const handledPaths = new Set();
+    for (const user of base.authInternalUsers) {
+        if (user.user !== 'any') {
+            for (const perm of user.permissions) {
+                if (perm.path && perm.path.length) {
+                    handledPaths.add(perm.path);
+                }
+            }
+        }
+    }
+
+    // Paths that aren't explicitly handled are allowed read/publish
+    for (const user of base.authInternalUsers) {
+        if (user.user === 'any') {
+            const permissions = [];
+
+            for (const path of paths) {
+                if (!handledPaths.has(path.name)) {
+                    permissions.push({ action: 'read', path: path.name });
+                    permissions.push({ action: 'publish', path: path.name });
+                }
+            }
+
+            user.permissions = permissions;
+        }
+    }
+
+    let config = YAML.stringify(base, (key, value) => {
+        if (typeof value === 'boolean') {
+            return value === true ? 'yes' : 'no';
+        } else {
+            return value;
+        }
+    });
+
+    // This is janky but MediaMTX wants `no` as a string and not a boolean
+    // and I can't get the YAML library to respect that...
+    config = config.split('\n').map((line) => {
+        line = line.replace(/^encryption: no/, 'encryption: "no"');
+        line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
+        line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
+        return line;
+    }).join('\n');
+
+    return config;
 }
 
 export async function globalPaths(): Promise<any> {
