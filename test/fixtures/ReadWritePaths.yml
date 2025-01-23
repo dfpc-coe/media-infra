@@ -31,10 +31,38 @@ authInternalUsers:
     pass: ""
     ips: []
     permissions:
-      - action: publish
-        path: ""
       - action: read
-        path: ""
+        path: path0
+      - action: publish
+        path: path0
+      - action: read
+        path: path1
+      - action: publish
+        path: path1
+      - action: read
+        path: path2
+      - action: publish
+        path: path2
+      - action: read
+        path: path3
+      - action: publish
+        path: path3
+      - action: read
+        path: path4
+      - action: publish
+        path: path4
+  - user: pathrw-publish
+    pass: ""
+    ips: []
+    permissions:
+      - action: publish
+        path: pathrw
+  - user: pathrw-read
+    pass: ""
+    ips: []
+    permissions:
+      - action: read
+        path: pathrw
 authHTTPAddress: ""
 authHTTPExclude:
   - action: api

@@ -58,7 +58,7 @@ export default async function persist(): Promise<string> {
             if (user.user !== 'any') {
                 for (const perm of user.permissions) {
                     if (perm.path && perm.path.length) {
-                        handledPaths.set(perm.path);
+                        handledPaths.add(perm.path);
                     }
                 }
             }
@@ -75,6 +75,8 @@ export default async function persist(): Promise<string> {
                         permissions.push({ action: 'publish', path: path.name });
                     }
                 }
+
+                user.permissions = permissions;
             }
         }
 
@@ -138,6 +140,10 @@ export async function globalConfig(): Promise<any> {
             Authorization: `Basic ${Buffer.from('management:' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
         }
     });
+
+    if (!res.ok) {
+        throw new Error('Status: ' + res.status + ' Body: ' + await res.text());
+    }
 
     const body = await res.json();
 

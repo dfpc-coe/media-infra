@@ -1,4 +1,5 @@
 import os from 'node:os';
+import YAML from 'yaml';
 import { randomUUID } from 'node:crypto';
 import persist from '../persist.js';
 import fs from 'node:fs'
@@ -91,26 +92,42 @@ test('Create Read/Write Path/User', async (t) => {
         t.fail(await res.text());
     }
 
-    const res2 = await fetch(new URL(`http://localhost:9997/v3/config/global/patch`), {
+    const res2 = await fetch(new URL(`http://localhost:9997/v3/config/global/get`), {
+        headers: {
+            Authorization: `Basic ${Buffer.from('management' + ':' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
+        },
+    });
+
+    if (!res2.ok) {
+        t.fail(await res2.text());
+    }
+
+    const current = await res2.json();
+
+    current.authInternalUsers.push({
+        user: 'pathrw-publish',
+        permissions: [{
+            action: 'publish',
+            path: uuid
+        }]
+    })
+
+    current.authInternalUsers.push({
+        user: 'pathrw-read',
+        permissions: [{
+            action: 'read',
+            path: uuid
+        }]
+    });
+
+    const res3 = await fetch(new URL(`http://localhost:9997/v3/config/global/patch`), {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Basic ${Buffer.from('management' + ':' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
         },
         body: JSON.stringify({
-            authInternalUsers: [{
-                user: 'pathrw-publish',
-                permissions: [{
-                    action: 'publish',
-                    path: uuid
-                }]
-            },{
-                user: 'pathrw-read',
-                permissions: [{
-                    action: 'read',
-                    path: uuid
-                }]
-            }]
+            authInternalUsers: current.authInternalUsers
         })
     });
 
@@ -131,6 +148,50 @@ test('Read/Write Paths', async (t) => {
     }
 
     t.deepEqual(config, String(fs.readFileSync(fixture)));
+
+    t.deepEquals(YAML.parse(config).authInternalUsers, [{
+        user: 'management',
+        pass: 'localtesting123',
+        ips: [],
+        permissions: [
+            { action: 'publish', path: '' },
+            { action: 'read', path: '' },
+            { action: 'playback', path: '' },
+            { action: 'api', path: '' },
+            { action: 'metrics', path: '' },
+            { action: 'pprof', path: '' }
+        ]
+    },{
+        user: 'any',
+        pass: '',
+        ips: [],
+        permissions: [
+            { action: 'read', path: 'path0' },
+            { action: 'publish', path: 'path0' },
+            { action: 'read', path: 'path1' },
+            { action: 'publish', path: 'path1' },
+            { action: 'read', path: 'path2' },
+            { action: 'publish', path: 'path2' },
+            { action: 'read', path: 'path3' },
+            { action: 'publish', path: 'path3' },
+            { action: 'read', path: 'path4' },
+            { action: 'publish', path: 'path4' }
+        ]
+    },{
+        user: 'pathrw-publish',
+        pass: '',
+        ips: [],
+        permissions: [
+            { action: 'publish', path: 'pathrw' }
+        ]
+    },{
+        user: 'pathrw-read',
+        pass: '',
+        ips: [],
+        permissions: [
+            { action: 'read', path: 'pathrw' }
+        ]
+    }])
 
     t.end()
 });
