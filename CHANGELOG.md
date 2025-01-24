@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.19.0
+
+- :arrow_up: Update `mediamtx@1.11.2`
+
 ### v2.18.0
 
 - :white_check_mark: Add basic tests of persist script
