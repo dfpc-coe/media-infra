@@ -16,17 +16,11 @@ authInternalUsers:
     ips: []
     permissions:
       - action: publish
-        path: ""
       - action: read
-        path: ""
       - action: playback
-        path: ""
       - action: api
-        path: ""
       - action: metrics
-        path: ""
       - action: pprof
-        path: ""
   - user: any
     pass: ""
     ips: []
