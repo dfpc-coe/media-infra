@@ -154,12 +154,12 @@ test('Read/Write Paths', async (t) => {
         pass: 'localtesting123',
         ips: [],
         permissions: [
-            { action: 'publish', path: '' },
-            { action: 'read', path: '' },
-            { action: 'playback', path: '' },
-            { action: 'api', path: '' },
-            { action: 'metrics', path: '' },
-            { action: 'pprof', path: '' }
+            { action: 'publish' },
+            { action: 'read' },
+            { action: 'playback' },
+            { action: 'api' },
+            { action: 'metrics' },
+            { action: 'pprof' }
         ]
     },{
         user: 'any',
