@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.20.0
+
+- :rocket: Ensure `management` User is retained
+
 ### v2.19.0
 
 - :arrow_up: Update `mediamtx@1.11.2`
