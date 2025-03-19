@@ -149,6 +149,7 @@ webrtcAdditionalHosts: []
 webrtcICEServers2: []
 webrtcHandshakeTimeout: 10s
 webrtcTrackGatherTimeout: 2s
+webrtcSTUNGatherTimeout: 5s
 srt: yes
 srtAddress: :8890
 paths:
