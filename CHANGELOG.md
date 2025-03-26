@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.20.1
+
+- :arrow_up: Update Core Deps
+
 ### v2.20.0
 
 - :rocket: Ensure `management` User is retained
