@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.21.0
+
+- :rocket: Add Playback List
+
 ### v2.20.1
 
 - :arrow_up: Update Core Deps

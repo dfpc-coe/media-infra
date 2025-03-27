@@ -8,6 +8,13 @@ const PORTS = [{
     Certificate: true,
     Enabled: true
 },{
+    Name: 'Playback',
+    Port: 9996,
+    Protocol: 'tcp',
+    Description: 'Playback Protocol',
+    Certificate: true,
+    Enabled: false
+},{
     Name: 'RTSP',
     Port: 8554,
     Protocol: 'tcp',
