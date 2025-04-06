@@ -13,7 +13,7 @@ const PORTS = [{
     Protocol: 'tcp',
     Description: 'Playback Protocol',
     Certificate: true,
-    Enabled: false
+    Enabled: true
 },{
     Name: 'RTSP',
     Port: 8554,
