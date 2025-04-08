@@ -9,43 +9,9 @@ udpMaxPayloadSize: 1472
 runOnConnect: ""
 runOnConnectRestart: no
 runOnDisconnect: ""
-authMethod: internal
-authInternalUsers:
-  - user: management
-    pass: localtesting123
-    ips: []
-    permissions:
-      - action: publish
-      - action: read
-      - action: playback
-      - action: api
-      - action: metrics
-      - action: pprof
-  - user: any
-    pass: ""
-    ips: []
-    permissions:
-      - action: read
-        path: path0
-      - action: publish
-        path: path0
-      - action: read
-        path: path1
-      - action: publish
-        path: path1
-      - action: read
-        path: path2
-      - action: publish
-        path: path2
-      - action: read
-        path: path3
-      - action: publish
-        path: path3
-      - action: read
-        path: path4
-      - action: publish
-        path: path4
-authHTTPAddress: ""
+authMethod: http
+authInternalUsers: []
+authHTTPAddress: undefined/video/auth
 authHTTPExclude:
   - action: api
     path: ""

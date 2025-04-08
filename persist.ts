@@ -53,8 +53,8 @@ export default async function persist(): Promise<string> {
         base.paths[path.name] = path;
     }
 
-    base.authMethod = 'http'
-    base.authHTTPAddress = process.env.CLOUDTAK_API + '/
+    base.authMethod = 'http';
+    base.authHTTPAddress = process.env.CLOUDTAK_API + '/video/auth';
     base.authInternalUsers = [];
 
     let config = YAML.stringify(base, (key, value) => {
