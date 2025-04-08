@@ -27,8 +27,6 @@ if [ ! -f "/opt/mediamtx/mediamtx.yml" ]; then
     cp "/mediamtx.base.yml" "/opt/mediamtx/mediamtx.yml"
 fi;
 
-yq e -i ".authInternalUsers[0].pass = \"$MANAGEMENT_PASSWORD\"" "/opt/mediamtx/mediamtx.yml"
-
 if [[ ! -f /mediamtx.yml ]]; then
     rm /mediamtx.yml
 fi
