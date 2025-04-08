@@ -1,5 +1,5 @@
 services:
-  api:
+  mediamtx:
     platform: linux/amd64
     build: .
     restart: always

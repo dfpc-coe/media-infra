@@ -31,15 +31,15 @@ jobs:
           role-session-name: GithubECRBuilder
           aws-region: ${{secrets.AWS_REGION}}
 
-      - name: Docker Build API
-        run: docker compose build api
+      - name: Docker Build
+        run: node bin/build.js
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Configure AWS Credentials (STAGING)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{secrets.AWS_ACCOUNT_ID}}:role/Github-ECR-Builder
+          role-session-name: GithubECRBuilder
+          aws-region: ${{secrets.AWS_REGION}}
 
-      - name: Docker Tag API
-        run: docker tag media-infra-api:latest ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-media:${{github.event.pull_request.head.sha || github.sha}}
-
-      - name: Docker Push API
-        run: docker push ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-media:${{github.event.pull_request.head.sha || github.sha}}
+      - name: Docker Build (STAGING)
+        run: node bin/build.js
