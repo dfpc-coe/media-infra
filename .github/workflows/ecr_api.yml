@@ -33,13 +33,19 @@ jobs:
 
       - name: Docker Build
         run: node bin/build.js
+        env:
+          AWS_ACCOUNT_ID: ${{secrets.AWS_ACCOUNT_ID}}
+          AWS_REGION: ${{secrets.AWS_REGION}}
 
       - name: Configure AWS Credentials (STAGING)
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{secrets.AWS_ACCOUNT_ID}}:role/Github-ECR-Builder
+          role-to-assume: arn:aws:iam::${{secrets.AWS_STAGING_ACCOUNT_ID}}:role/Github-ECR-Builder
           role-session-name: GithubECRBuilder
-          aws-region: ${{secrets.AWS_REGION}}
+          aws-region: ${{secrets.AWS_STAGING_REGION}}
 
       - name: Docker Build (STAGING)
         run: node bin/build.js
+        env:
+          AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
+          AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
