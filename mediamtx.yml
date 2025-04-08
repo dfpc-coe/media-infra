@@ -10,18 +10,8 @@ writeTimeout: 10s
 writeQueueSize: 512
 udpMaxPayloadSize: 1472
 
-authMethod: internal
-authInternalUsers:
-- user: management
-  pass: testingPassword
-  permissions:
-  - action: publish
-  - action: read
-  - action: playback
-  - action: api
-  - action: metrics
-  - action: pprof
-- user: any
+authMethod: http
+authHTTPAddress: http://myauthserver/auth
 
 api: yes
 apiAddress: :9997

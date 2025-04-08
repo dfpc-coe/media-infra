@@ -68,18 +68,6 @@ const PORTS = [{
 });
 
 const Resources = {
-    SigningSecret: {
-        Type: 'AWS::SecretsManager::Secret',
-        Properties: {
-            Description: cf.join([cf.stackName, ' API Password']),
-            GenerateSecretString: {
-                ExcludePunctuation: true,
-                PasswordLength: 32
-            },
-            Name: cf.join([cf.stackName, '/api/secret']),
-            KmsKeyId: cf.ref('KMS')
-        }
-    },
     Logs: {
         Type: 'AWS::Logs::LogGroup',
         Properties: {
@@ -180,7 +168,6 @@ const Resources = {
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
-                    { Name: 'MANAGEMENT_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}') },
                     { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
                 ],

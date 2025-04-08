@@ -5,7 +5,7 @@ import cron from 'node-cron';
 import YAML from 'yaml';
 
 if (import.meta.url === `file://${process.cwd()}/${process.argv[1]}`) {
-    if (!process.env.MANAGEMENT_PASSWORD) throw new Error('MANAGEMENT_PASSWORD Env Var not set');
+    if (!process.env.MANAGEMENT_PASSWORD) throw new Error('CLOUDTAK_URL Env Var not set');
 
     schedule();
 }
@@ -53,63 +53,9 @@ export default async function persist(): Promise<string> {
         base.paths[path.name] = path;
     }
 
-    // Calculate paths which are already handled by a user
-    const handledPaths = new Set();
-    for (const user of base.authInternalUsers) {
-        if (user.user !== 'any') {
-            for (const perm of user.permissions) {
-                if (perm.path && perm.path.length) {
-                    handledPaths.add(perm.path);
-                }
-            }
-        }
-    }
-
-    let management;
-
-    // Paths that aren't explicitly handled are allowed read/publish
-    for (const user of base.authInternalUsers) {
-        if (user.user === 'any') {
-            const permissions = [];
-
-            for (const path of paths) {
-                if (!handledPaths.has(path.name)) {
-                    permissions.push({ action: 'read', path: path.name });
-                    permissions.push({ action: 'publish', path: path.name });
-                }
-            }
-
-            user.permissions = permissions;
-        } else if (user.user === 'management') {
-            management = user;
-        }
-    }
-
-    if (!management) {
-        base.authInternalUsers.push({
-            user: 'management',
-            pass: process.env.MANAGEMENT_PASSWORD,
-            permissions: [
-                { action: 'publish' },
-                { action: 'read' },
-                { action: 'playback' },
-                { action: 'api' },
-                { action: 'metrics' },
-                { action: 'pprof' }
-            ]
-        });
-    } else {
-        management.pass = process.env.MANAGEMENT_PASSWORD;
-        management.permissions = [
-            { action: 'publish' },
-            { action: 'read' },
-            { action: 'playback' },
-            { action: 'api' },
-            { action: 'metrics' },
-            { action: 'pprof' }
-        ];
-    }
-
+    base.authMethod = 'http'
+    base.authHTTPAddress = process.env.CLOUDTAK_API + '/
+    base.authInternalUsers = [];
 
     let config = YAML.stringify(base, (key, value) => {
         if (typeof value === 'boolean') {
