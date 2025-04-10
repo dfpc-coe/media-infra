@@ -11,7 +11,7 @@ writeQueueSize: 512
 udpMaxPayloadSize: 1472
 
 authMethod: http
-authHTTPAddress: http://myauthserver/auth
+authHTTPAddress: http://example.com
 authHTTPExclude: []
 
 api: yes

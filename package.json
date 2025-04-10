@@ -7,7 +7,6 @@
     "scripts": {
         "build": "tsc",
         "lint": "eslint persist.ts cloudformation/",
-        "test": "test/test"
     },
     "engines": {
         "node": ">= 22"
@@ -29,6 +28,7 @@
         "json-diff": "^1.0.6",
         "node-cron": "^3.0.3",
         "tsx": "^4.19.2",
+        "undici": "^7.8.0",
         "yaml": "^2.6.0"
     },
     "devDependencies": {
