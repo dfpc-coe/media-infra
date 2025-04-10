@@ -12,18 +12,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     const currentConfig = YAML.parse(String(await fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
 
-    currentConfig.authMethod = 'http';
-    currentConfig.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
-    currentConfig.authHTTPExclude = [];
-    currentConfig.authInternalUsers = [];
-
-    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', currentConfig);
-
-    // Ref: https://github.com/bluenviron/mediamtx/issues/937
-    fs.renameSync(
-        '/opt/mediamtx/mediamtx.yml.new',
-        '/opt/mediamtx/mediamtx.yml'
-    );
+    // Ensure if there is a config change it is immediately applied
+    writeConfig(defaultConfig(currentConfig));
 
     schedule();
 }
@@ -41,18 +31,48 @@ export function schedule() {
             if (err instanceof assert.AssertionError) {
                 console.error('DIFF:', diffString(currentConfig, existConfig));
 
-                await fsp.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
-
-                // Ref: https://github.com/bluenviron/mediamtx/issues/937
-                await fsp.rename(
-                    '/opt/mediamtx/mediamtx.yml.new',
-                    '/opt/mediamtx/mediamtx.yml'
-                );
+                writeConfig(defaultConfig(currentConfig));
             } else {
                 throw err;
             }
         }
     });
+}
+
+export function defaultConfig(config: Record<string, any>): string {
+    config.authMethod = 'http';
+    config.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
+    config.authHTTPExclude = [];
+    config.authInternalUsers = [];
+
+    let configstr = YAML.stringify(config, (key, value) => {
+        if (typeof value === 'boolean') {
+            return value === true ? 'yes' : 'no';
+        } else {
+            return value;
+        }
+    });
+
+    // This is janky but MediaMTX wants `no` as a string and not a boolean
+    // and I can't get the YAML library to respect that...
+    configstr = configstr.split('\n').map((line) => {
+        line = line.replace(/^encryption: no/, 'encryption: "no"');
+        line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
+        line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
+        return line;
+    }).join('\n');
+
+    return configstr;
+}
+
+export function writeConfig(config: string): void {
+    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', config);
+
+    // Ref: https://github.com/bluenviron/mediamtx/issues/937
+    fs.renameSync(
+        '/opt/mediamtx/mediamtx.yml.new',
+        '/opt/mediamtx/mediamtx.yml'
+    );
 }
 
 export default async function persist(): Promise<string> {
@@ -71,29 +91,7 @@ export default async function persist(): Promise<string> {
         base.paths[path.name] = path;
     }
 
-    base.authMethod = 'http';
-    base.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
-    base.authHTTPExclude = [];
-    base.authInternalUsers = [];
-
-    let config = YAML.stringify(base, (key, value) => {
-        if (typeof value === 'boolean') {
-            return value === true ? 'yes' : 'no';
-        } else {
-            return value;
-        }
-    });
-
-    // This is janky but MediaMTX wants `no` as a string and not a boolean
-    // and I can't get the YAML library to respect that...
-    config = config.split('\n').map((line) => {
-        line = line.replace(/^encryption: no/, 'encryption: "no"');
-        line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
-        line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
-        return line;
-    }).join('\n');
-
-    return config;
+    return base;
 }
 
 export async function globalPaths(): Promise<any> {
