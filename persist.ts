@@ -100,7 +100,7 @@ export async function globalPaths(): Promise<any> {
             }
         });
 
-        const body = await res.json() as any
+        const body = await res.json() as any;
 
         total = body.itemCount;
 
