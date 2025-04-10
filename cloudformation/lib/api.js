@@ -167,6 +167,7 @@ const Resources = {
                 }),
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
+                    { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/media:SecretString:username:AWSCURRENT}}') },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
                     { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
@@ -411,10 +412,6 @@ export default cf.merge({
         SubnetAIP: {
             Description: 'NLB EIP for Subnet A',
             Value: cf.ref('ELBEIPSubnetA')
-        },
-        ManagementPassword: {
-            Description: 'Video Server Management Password',
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}')
         }
     },
     Resources

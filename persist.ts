@@ -6,6 +6,7 @@ import YAML from 'yaml';
 
 if (import.meta.url === `file://${process.cwd()}/${process.argv[1]}`) {
     if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
+    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
 
     schedule();
 }
@@ -93,7 +94,7 @@ export async function globalPaths(): Promise<any> {
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                Authorization: `Basic ${Buffer.from('management:fakepassword').toString('base64')}`
+                Authorization: `Basic ${Buffer.from(`management:${process.env.MediaSecret}`).toString('base64')}`
             }
         });
 
@@ -111,7 +112,7 @@ export async function globalConfig(): Promise<any> {
     const res = await fetch('http://localhost:9997/v3/config/global/get', {
         method: 'GET',
         headers: {
-            Authorization: `Basic ${Buffer.from('management:fakepassword').toString('base64')}`
+            Authorization: `Basic ${Buffer.from(`management:${process.env.MediaSecret}`).toString('base64')}`
         }
     });
 
