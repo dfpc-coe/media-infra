@@ -12,6 +12,7 @@ udpMaxPayloadSize: 1472
 
 authMethod: http
 authHTTPAddress: http://myauthserver/auth
+authHTTPExclude: []
 
 api: yes
 apiAddress: :9997
