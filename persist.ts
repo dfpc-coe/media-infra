@@ -1,13 +1,28 @@
 import assert from 'node:assert';
 import { diffString }  from 'json-diff';
 import { fetch } from 'undici';
-import fs from 'node:fs/promises';
+import fsp from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
+
+    const currentConfig = YAML.parse(String(await fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
+
+    currentConfig.authMethod = 'http';
+    currentConfig.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
+    currentConfig.authHTTPExclude = [];
+    currentConfig.authInternalUsers = [];
+
+    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', config);
+
+    // Ref: https://github.com/bluenviron/mediamtx/issues/937
+    fs.renameSync(
+        '/opt/mediamtx/mediamtx.yml.new',
+        '/opt/mediamtx/mediamtx.yml'
+    );
 
     schedule();
 }
@@ -16,19 +31,19 @@ export function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         const config = await persist();
 
-        const currentConfig = YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml')));
+        const currentConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
         const existConfig = YAML.parse(config);
 
         try {
-            assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
+            assert.deepEqual(YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
         } catch (err) {
             if (err instanceof assert.AssertionError) {
                 console.error('DIFF:', diffString(currentConfig, existConfig));
 
-                await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
+                await fsp.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
 
                 // Ref: https://github.com/bluenviron/mediamtx/issues/937
-                await fs.rename(
+                await fsp.rename(
                     '/opt/mediamtx/mediamtx.yml.new',
                     '/opt/mediamtx/mediamtx.yml'
                 );
