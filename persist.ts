@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
-if (import.meta.url === `file://${process.cwd()}/${process.argv[1]}`) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
 
