@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { diffString }  from 'json-diff';
-import { fetch } from 'undici'
+import { fetch } from 'undici';
 import fs from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
