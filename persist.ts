@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { diffString }  from 'json-diff';
 import { fetch } from 'undici';
+import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
@@ -16,7 +17,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     currentConfig.authHTTPExclude = [];
     currentConfig.authInternalUsers = [];
 
-    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', config);
+    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', currentConfig);
 
     // Ref: https://github.com/bluenviron/mediamtx/issues/937
     fs.renameSync(
