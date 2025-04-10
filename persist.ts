@@ -56,7 +56,7 @@ export default async function persist(): Promise<string> {
     }
 
     base.authMethod = 'http';
-    base.authHTTPAddress = process.env.CLOUDTAK_API + '/video/auth';
+    base.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
     base.authHTTPExclude = [];
     base.authInternalUsers = [];
 
