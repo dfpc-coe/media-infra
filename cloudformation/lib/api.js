@@ -168,6 +168,8 @@ const Resources = {
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
                     { Name: 'Environment', Value: cf.ref('Environment') },
+                    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
+                    { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/media:SecretString::AWSCURRENT}}') },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
                     { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_REGION', Value: cf.region }
@@ -254,16 +256,6 @@ const Resources = {
                             'logs:DescribeLogStreams'
                         ],
                         Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
-                    },{
-                        Effect: 'Allow',
-                        Action: [
-                            'secretsmanager:Describe*',
-                            'secretsmanager:Get*'
-                        ],
-                        Resource: [
-                            cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/media']),
-                            cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/secret'])
-                        ]
                     }]
                 }
             }],
