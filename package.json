@@ -22,6 +22,7 @@
     },
     "homepage": "https://github.com/tak-ps/auth-infra#readme",
     "dependencies": {
+        "@aws-sdk/client-secrets-manager": "^3.787.0",
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",

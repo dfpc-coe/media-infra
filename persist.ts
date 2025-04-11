@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import SecretsManager from '@aws-sdk/client-secrets-manager';
 import { diffString }  from 'json-diff';
 import { fetch } from 'undici';
 import fs from 'node:fs';
@@ -7,8 +8,16 @@ import cron from 'node-cron';
 import YAML from 'yaml';
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+    if (!process.env.Environment) throw new Error('Environment Env Var not set');
     if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
-    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
+
+    if (!process.env.MediaSecret) {
+        process.env.MediaSecret = await fetchSecret(`coe-etl-${process.env.Environment}/api/media`);
+    }
+
+    if (!process.env.SigningSecret) {
+        process.env.SigningSecret = await fetchSecret(`coe-etl-${process.env.Environment}/api/secret`);
+    }
 
     const currentConfig = YAML.parse(String(await fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
 
@@ -139,4 +148,12 @@ export async function globalConfig(): Promise<any> {
     const body = await res.json();
 
     return body;
+}
+
+async function fetchSecret(SecretId: string): Promise<string> {
+    const secrets = new SecretsManager.SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
+
+    const secret = await secrets.send(new SecretsManager.GetSecretValueCommand({ SecretId }));
+
+    return secret.SecretString || '';
 }

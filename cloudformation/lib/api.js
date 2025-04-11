@@ -167,10 +167,10 @@ const Resources = {
                 }),
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
-                    { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/media:SecretString::AWSCURRENT}}') },
+                    { Name: 'Environment', Value: cf.ref('Environment') },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
                     { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
-                    { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
+                    { Name: 'AWS_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {
                     LogDriver: 'awslogs',
