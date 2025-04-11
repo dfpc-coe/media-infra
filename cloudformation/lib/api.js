@@ -258,11 +258,11 @@ const Resources = {
                         Effect: 'Allow',
                         Action: [
                             'secretsmanager:Describe*',
-                            'secretsmanager:Get*',
+                            'secretsmanager:Get*'
                         ],
                         Resource: [
                             cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/media']),
-                            cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/secret])
+                            cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/secret'])
                         ]
                     }]
                 }
