@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import jwt from 'jsonwebtoken';
 import { diffString }  from 'json-diff';
 import { fetch } from 'undici';
 import fs from 'node:fs';
@@ -6,26 +7,38 @@ import fsp from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
+export type RemotePath = {
+    id: number,
+    path: string,
+    proxy: string | null,
+}
+
+export type RemotePaths = {
+    total: number,
+    items: Array<RemotePath>
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.Environment) throw new Error('Environment Env Var not set');
     if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    const currentConfig = YAML.parse(String(fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
-
     // Ensure if there is a config change it is immediately applied
+    const currentConfig = YAML.parse(String(fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
     writeConfig(defaultConfig(currentConfig));
 
-    schedule();
+    await schedule();
 }
 
-export function schedule() {
+export async function schedule() {
+    const config = await persist();
+    writeConfig(defaultConfig(config));
+
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        const config = await persist();
+        const existConfig = await persist();
 
         const currentConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
-        const existConfig = YAML.parse(config);
 
         try {
             assert.deepEqual(YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
@@ -77,14 +90,21 @@ export function writeConfig(config: string): void {
     );
 }
 
-export default async function persist(): Promise<string> {
+export default async function persist(): Promise<Record<string, any>> {
     const base = await globalConfig();
-    const paths = (await globalPaths()).map((path: any) => {
-        return {
-            name: path.name,
-            source: path.source,
-            sourceOnDemand: path.sourceOnDemand
-        };
+
+    const paths = (await globalPaths()).map((remote: RemotePath) => {
+        if (remote.proxy) {
+            return {
+                name: remote.path,
+                source: remote.proxy,
+                sourceOnDemand: true
+            };
+        } else {
+            return {
+                name: remote.path
+            };
+        }
     });
 
     base.paths = {};
@@ -96,31 +116,37 @@ export default async function persist(): Promise<string> {
     return base;
 }
 
-export async function globalPaths(): Promise<any> {
+export async function globalPaths(): Promise<Array<RemotePath>> {
     let total = 0;
-    let page = -1;
+    let page = 0;
 
     const paths = [];
 
     do {
-        ++page;
-
-        const url = new URL('http://localhost:9997/v3/config/paths/list');
-        url.searchParams.append('itemsPerPage', '1000');
+        const url = new URL(process.env.CLOUDTAK_URL + '/video/lease');
+        url.searchParams.append('limit', '100');
+        url.searchParams.append('expired', 'false');
+        url.searchParams.append('ephemeral', 'all');
+        url.searchParams.append('impersonate', 'true');
         url.searchParams.append('page', String(page));
 
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                Authorization: `Basic ${Buffer.from(`management:${process.env.MediaSecret}`).toString('base64')}`
+                // @ts-expect-error JWT Secret
+                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`
             }
         });
 
-        const body = await res.json() as any;
+        if (!res.ok) throw new Error(await res.text());
 
-        total = body.itemCount;
+        const body = await res.json() as RemotePaths;
+
+        total = body.total;
 
         paths.push(...body.items);
+
+        ++page;
     } while (total > page * 1000);
 
     return paths;
