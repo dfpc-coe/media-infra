@@ -36,8 +36,7 @@ export async function schedule() {
     writeConfig(defaultConfig(config));
 
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        const existConfig = await persist();
-
+        const existConfig = YAML.parse(defaultConfig(await persist()));
         const currentConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
 
         try {
@@ -46,7 +45,7 @@ export async function schedule() {
             if (err instanceof assert.AssertionError) {
                 console.error('DIFF:', diffString(currentConfig, existConfig));
 
-                writeConfig(defaultConfig(currentConfig));
+                writeConfig(currentConfig);
             } else {
                 throw err;
             }

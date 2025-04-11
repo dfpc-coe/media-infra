@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.0.1
+
+- :bug: Small bugs in path generation & diff comparison
+
 ### v3.0.0
 
 - :tada: Reverse the management of state, instead checking CloudTAK for a list of Video Leases
