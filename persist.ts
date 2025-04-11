@@ -1,35 +1,52 @@
 import assert from 'node:assert';
+import jwt from 'jsonwebtoken';
 import { diffString }  from 'json-diff';
-import fs from 'node:fs/promises';
+import { fetch } from 'undici';
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
-if (import.meta.url === `file://${process.cwd()}/${process.argv[1]}`) {
-    if (!process.env.MANAGEMENT_PASSWORD) throw new Error('MANAGEMENT_PASSWORD Env Var not set');
-
-    schedule();
+export type RemotePath = {
+    id: number,
+    path: string,
+    proxy: string | null,
 }
 
-export function schedule() {
-    cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        const config = await persist();
+export type RemotePaths = {
+    total: number,
+    items: Array<RemotePath>
+}
 
-        const currentConfig = YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml')));
-        const existConfig = YAML.parse(config);
+if (import.meta.url === `file://${process.argv[1]}`) {
+    if (!process.env.Environment) throw new Error('Environment Env Var not set');
+    if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
+    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
+    if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
+
+    // Ensure if there is a config change it is immediately applied
+    const currentConfig = YAML.parse(String(fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
+    writeConfig(defaultConfig(currentConfig));
+
+    await schedule();
+}
+
+export async function schedule() {
+    const config = await persist();
+    writeConfig(defaultConfig(config));
+
+    cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
+        const existConfig = await persist();
+
+        const currentConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
 
         try {
-            assert.deepEqual(YAML.parse(String(await fs.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
+            assert.deepEqual(YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
         } catch (err) {
             if (err instanceof assert.AssertionError) {
                 console.error('DIFF:', diffString(currentConfig, existConfig));
 
-                await fs.writeFile('/opt/mediamtx/mediamtx.yml.new', config);
-
-                // Ref: https://github.com/bluenviron/mediamtx/issues/937
-                await fs.rename(
-                    '/opt/mediamtx/mediamtx.yml.new',
-                    '/opt/mediamtx/mediamtx.yml'
-                );
+                writeConfig(defaultConfig(currentConfig));
             } else {
                 throw err;
             }
@@ -37,81 +54,13 @@ export function schedule() {
     });
 }
 
-export default async function persist(): Promise<string> {
-    const base = await globalConfig();
-    const paths = (await globalPaths()).map((path: any) => {
-        return {
-            name: path.name,
-            source: path.source,
-            sourceOnDemand: path.sourceOnDemand
-        };
-    });
+export function defaultConfig(config: Record<string, any>): string {
+    config.authMethod = 'http';
+    config.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
+    config.authHTTPExclude = [];
+    config.authInternalUsers = [];
 
-    base.paths = {};
-
-    for (const path of paths) {
-        base.paths[path.name] = path;
-    }
-
-    // Calculate paths which are already handled by a user
-    const handledPaths = new Set();
-    for (const user of base.authInternalUsers) {
-        if (user.user !== 'any') {
-            for (const perm of user.permissions) {
-                if (perm.path && perm.path.length) {
-                    handledPaths.add(perm.path);
-                }
-            }
-        }
-    }
-
-    let management;
-
-    // Paths that aren't explicitly handled are allowed read/publish
-    for (const user of base.authInternalUsers) {
-        if (user.user === 'any') {
-            const permissions = [];
-
-            for (const path of paths) {
-                if (!handledPaths.has(path.name)) {
-                    permissions.push({ action: 'read', path: path.name });
-                    permissions.push({ action: 'publish', path: path.name });
-                }
-            }
-
-            user.permissions = permissions;
-        } else if (user.user === 'management') {
-            management = user;
-        }
-    }
-
-    if (!management) {
-        base.authInternalUsers.push({
-            user: 'management',
-            pass: process.env.MANAGEMENT_PASSWORD,
-            permissions: [
-                { action: 'publish' },
-                { action: 'read' },
-                { action: 'playback' },
-                { action: 'api' },
-                { action: 'metrics' },
-                { action: 'pprof' }
-            ]
-        });
-    } else {
-        management.pass = process.env.MANAGEMENT_PASSWORD;
-        management.permissions = [
-            { action: 'publish' },
-            { action: 'read' },
-            { action: 'playback' },
-            { action: 'api' },
-            { action: 'metrics' },
-            { action: 'pprof' }
-        ];
-    }
-
-
-    let config = YAML.stringify(base, (key, value) => {
+    let configstr = YAML.stringify(config, (key, value) => {
         if (typeof value === 'boolean') {
             return value === true ? 'yes' : 'no';
         } else {
@@ -121,41 +70,83 @@ export default async function persist(): Promise<string> {
 
     // This is janky but MediaMTX wants `no` as a string and not a boolean
     // and I can't get the YAML library to respect that...
-    config = config.split('\n').map((line) => {
+    configstr = configstr.split('\n').map((line) => {
         line = line.replace(/^encryption: no/, 'encryption: "no"');
         line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
         line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
         return line;
     }).join('\n');
 
-    return config;
+    return configstr;
 }
 
-export async function globalPaths(): Promise<any> {
+export function writeConfig(config: string): void {
+    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', config);
+
+    // Ref: https://github.com/bluenviron/mediamtx/issues/937
+    fs.renameSync(
+        '/opt/mediamtx/mediamtx.yml.new',
+        '/opt/mediamtx/mediamtx.yml'
+    );
+}
+
+export default async function persist(): Promise<Record<string, any>> {
+    const base = await globalConfig();
+
+    const paths = (await globalPaths()).map((remote: RemotePath) => {
+        if (remote.proxy) {
+            return {
+                name: remote.path,
+                source: remote.proxy,
+                sourceOnDemand: true
+            };
+        } else {
+            return {
+                name: remote.path
+            };
+        }
+    });
+
+    base.paths = {};
+
+    for (const path of paths) {
+        base.paths[path.name] = path;
+    }
+
+    return base;
+}
+
+export async function globalPaths(): Promise<Array<RemotePath>> {
     let total = 0;
-    let page = -1;
+    let page = 0;
 
     const paths = [];
 
     do {
-        ++page;
-
-        const url = new URL('http://localhost:9997/v3/config/paths/list');
-        url.searchParams.append('itemsPerPage', '1000');
+        const url = new URL(process.env.CLOUDTAK_URL + '/video/lease');
+        url.searchParams.append('limit', '100');
+        url.searchParams.append('expired', 'false');
+        url.searchParams.append('ephemeral', 'all');
+        url.searchParams.append('impersonate', 'true');
         url.searchParams.append('page', String(page));
 
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                Authorization: `Basic ${Buffer.from('management:' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
+                // @ts-expect-error JWT Secret
+                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`
             }
         });
 
-        const body = await res.json();
+        if (!res.ok) throw new Error(await res.text());
 
-        total = body.itemCount;
+        const body = await res.json() as RemotePaths;
+
+        total = body.total;
 
         paths.push(...body.items);
+
+        ++page;
     } while (total > page * 1000);
 
     return paths;
@@ -165,7 +156,7 @@ export async function globalConfig(): Promise<any> {
     const res = await fetch('http://localhost:9997/v3/config/global/get', {
         method: 'GET',
         headers: {
-            Authorization: `Basic ${Buffer.from('management:' + process.env.MANAGEMENT_PASSWORD).toString('base64')}`
+            Authorization: `Basic ${Buffer.from(`management:${process.env.MediaSecret}`).toString('base64')}`
         }
     });
 

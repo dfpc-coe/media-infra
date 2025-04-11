@@ -1,10 +1,10 @@
 services:
-  api:
+  mediamtx:
     platform: linux/amd64
     build: .
     restart: always
     environment:
-      - MANAGEMENT_PASSWORD
+      - CLOUDTAK_URL
     ports:
       - 8554:8554
       - 9997:9997
