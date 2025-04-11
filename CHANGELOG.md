@@ -12,7 +12,7 @@
 
 ### Pending Release
 
-### v3.0.1
+### v3.1.0
 
 - :bug: Small bugs in path generation & diff comparison
 
