@@ -12,7 +12,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    const currentConfig = YAML.parse(String(await fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
+    const currentConfig = YAML.parse(String(fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
 
     // Ensure if there is a config change it is immediately applied
     writeConfig(defaultConfig(currentConfig));
