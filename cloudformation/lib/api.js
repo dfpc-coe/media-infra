@@ -254,6 +254,16 @@ const Resources = {
                             'logs:DescribeLogStreams'
                         ],
                         Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
+                    },{
+                        Effect: 'Allow',
+                        Action: [
+                            'secretsmanager:Describe*',
+                            'secretsmanager:Get*',
+                        ],
+                        Resource: [
+                            cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/media']),
+                            cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:coe-etl-', cf.ref('Environment'), '/api/secret])
+                        ]
                     }]
                 }
             }],
