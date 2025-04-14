@@ -32,9 +32,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export async function schedule() {
-    const config = await persist();
-    writeConfig(defaultConfig(config));
-
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         const existConfig = YAML.parse(defaultConfig(await persist()));
         const currentConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
