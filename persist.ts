@@ -33,16 +33,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        const existConfig = YAML.parse(defaultConfig(await persist()));
-        const currentConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
+        const newConfig = YAML.parse(defaultConfig(await persist()));
+        const oldConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
 
         try {
-            assert.deepEqual(YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml'))), existConfig);
+            assert.deepEqual(oldConfig, newConfig);
         } catch (err) {
             if (err instanceof assert.AssertionError) {
-                console.error('DIFF:', diffString(currentConfig, existConfig));
+                console.error('DIFF:', diffString(oldConfig, newConfig));
 
-                writeConfig(currentConfig);
+                writeConfig(newConfig);
             } else {
                 throw err;
             }
