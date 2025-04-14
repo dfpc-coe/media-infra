@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.3.0 - 2025-04-14
+
+- :tada: Update MediaMTX@1.12
+
 ### v3.2.0
 
 - :tada: Enable Playback API by default
