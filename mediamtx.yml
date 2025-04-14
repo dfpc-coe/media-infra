@@ -20,7 +20,7 @@ apiEncryption: no
 apiAllowOrigin: '*'
 apiTrustedProxies: []
 
-playback: no
+playback: yes
 rtsp: yes
 protocols: [tcp]
 encryption: "no"
