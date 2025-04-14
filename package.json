@@ -2,12 +2,11 @@
     "name": "@tak-ps/media-infra",
     "type": "module",
     "private": true,
-    "version": "2.21.0",
+    "version": "3.1.0",
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
         "build": "tsc",
-        "lint": "eslint persist.ts cloudformation/",
-        "test": "test/test"
+        "lint": "eslint persist.ts cloudformation/"
     },
     "engines": {
         "node": ">= 22"
@@ -23,16 +22,20 @@
     },
     "homepage": "https://github.com/tak-ps/auth-infra#readme",
     "dependencies": {
+        "@aws-sdk/client-secrets-manager": "^3.787.0",
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",
         "json-diff": "^1.0.6",
+        "jsonwebtoken": "^9.0.2",
         "node-cron": "^3.0.3",
         "tsx": "^4.19.2",
+        "undici": "^7.8.0",
         "yaml": "^2.6.0"
     },
     "devDependencies": {
         "@types/json-diff": "^1.0.3",
+        "@types/jsonwebtoken": "^9.0.9",
         "@types/node": "^22.13.1",
         "@types/node-cron": "^3.0.11",
         "eslint": "^9.9.0",

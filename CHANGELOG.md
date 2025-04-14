@@ -12,6 +12,14 @@
 
 ### Pending Release
 
+### v3.1.0
+
+- :bug: Small bugs in path generation & diff comparison
+
+### v3.0.0
+
+- :tada: Reverse the management of state, instead checking CloudTAK for a list of Video Leases
+
 ### v2.21.0
 
 - :rocket: Add Playback List

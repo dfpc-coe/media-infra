@@ -68,18 +68,6 @@ const PORTS = [{
 });
 
 const Resources = {
-    SigningSecret: {
-        Type: 'AWS::SecretsManager::Secret',
-        Properties: {
-            Description: cf.join([cf.stackName, ' API Password']),
-            GenerateSecretString: {
-                ExcludePunctuation: true,
-                PasswordLength: 32
-            },
-            Name: cf.join([cf.stackName, '/api/secret']),
-            KmsKeyId: cf.ref('KMS')
-        }
-    },
     Logs: {
         Type: 'AWS::Logs::LogGroup',
         Properties: {
@@ -179,10 +167,12 @@ const Resources = {
                 }),
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
+                    { Name: 'Environment', Value: cf.ref('Environment') },
+                    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
+                    { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/media:SecretString::AWSCURRENT}}') },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
-                    { Name: 'MANAGEMENT_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}') },
                     { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
-                    { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
+                    { Name: 'AWS_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {
                     LogDriver: 'awslogs',
@@ -424,10 +414,6 @@ export default cf.merge({
         SubnetAIP: {
             Description: 'NLB EIP for Subnet A',
             Value: cf.ref('ELBEIPSubnetA')
-        },
-        ManagementPassword: {
-            Description: 'Video Server Management Password',
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/secret:SecretString::AWSCURRENT}}')
         }
     },
     Resources

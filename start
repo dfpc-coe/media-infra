@@ -3,8 +3,6 @@
 # Add MediaConfig File
 #
 
-FORCE_NEW_CONFIG="${FORCE_NEW_CONFIG:-false}"
-
 set -euo pipefail
 
 # Primarily used for testing, production mounts this via EFS
@@ -16,18 +14,8 @@ fi
 echo "Contents:"
 ls /opt/mediamtx/
 
-if [[ ${FORCE_NEW_CONFIG} == "true" ]]; then
-    echo "Force New Config = true - deleting mediamtx.yml"
-    rm "/opt/mediamtx/mediamtx.yml" || true
-fi
-
-# Copy EFS Persisted certs to Let's Encrypt Dir
-if [ ! -f "/opt/mediamtx/mediamtx.yml" ]; then
-    echo "NO CONFIG FOUND"
-    cp "/mediamtx.base.yml" "/opt/mediamtx/mediamtx.yml"
-fi;
-
-yq e -i ".authInternalUsers[0].pass = \"$MANAGEMENT_PASSWORD\"" "/opt/mediamtx/mediamtx.yml"
+# Copy EFS Persisted certs MediaMTX root
+cp "/mediamtx.base.yml" "/opt/mediamtx/mediamtx.yml"
 
 if [[ ! -f /mediamtx.yml ]]; then
     rm /mediamtx.yml
