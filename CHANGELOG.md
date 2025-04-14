@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.2.0
+
+- :tada: Enable Playback API by default
+
 ### v3.1.0
 
 - :bug: Small bugs in path generation & diff comparison
