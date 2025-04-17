@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.3.3 - 2025-04-17
+
+- :tada: Second GHR test
+
 ### v3.3.2 - 2025-04-17
 
 - :tada: Second GHR test
