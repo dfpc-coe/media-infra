@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.3.1 - 2025-04-17
+
+- :tada: Initial GHR test
+
 ### v3.3.0 - 2025-04-14
 
 - :tada: Update MediaMTX@1.12
