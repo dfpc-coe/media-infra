@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.3.4 - 2025-04-29
+
+- :bug: Remove process.env.Environment requirement from persist
+
 ### v3.3.3 - 2025-04-17
 
 - :tada: Second GHR test

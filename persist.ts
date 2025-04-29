@@ -19,7 +19,6 @@ export type RemotePaths = {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    if (!process.env.Environment) throw new Error('Environment Env Var not set');
     if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
