@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.4.0 - 2025-06-09
+
+- :arrow_up: Update to MediaMTX@1.12.3
+
 ### v3.3.4 - 2025-04-29
 
 - :bug: Remove process.env.Environment requirement from persist
