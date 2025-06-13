@@ -101,14 +101,14 @@ const Resources = {
                 Value: true
             },{
                 Key: 'access_logs.s3.bucket',
-                Value: cf.importValue(cf.join(['coe-elb-logs-', cf.ref('Environment'), '-bucket']))
+                Value: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-bucket']))
             },{
                 Key: 'access_logs.s3.prefix',
                 Value: cf.stackName
             }],
             SubnetMappings: [{
                 AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
-                SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a']))
+                SubnetId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a']))
             }]
         }
     },
@@ -129,7 +129,7 @@ const Resources = {
                     ToPort: port.Port
                 };
             }),
-            VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+            VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
         }
     },
     ServiceTaskDefinition: {
@@ -168,8 +168,8 @@ const Resources = {
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
                     { Name: 'Environment', Value: cf.ref('Environment') },
-                    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
-                    { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:coe-etl-${Environment}/api/media:SecretString::AWSCURRENT}}') },
+                    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
+                    { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/media:SecretString::AWSCURRENT}}') },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
                     { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_REGION', Value: cf.region }
@@ -309,7 +309,7 @@ const Resources = {
         DependsOn: PORTS.map((p) => { return `Listener${p.Name}`; }),
         Properties: {
             ServiceName: cf.join('-', [cf.stackName, 'Service']),
-            Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+            Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
             TaskDefinition: cf.ref('ServiceTaskDefinition'),
             LaunchType: 'FARGATE',
             PropagateTags: 'SERVICE',
@@ -320,7 +320,7 @@ const Resources = {
                     AssignPublicIp: 'ENABLED',
                     SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                     Subnets:  [
-                        cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a']))
+                        cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a']))
                     ]
                 }
             },
@@ -341,7 +341,7 @@ const Resources = {
                 Value: cf.join('-', [cf.stackName, 'ec2-sg'])
             }],
             GroupDescription: 'Allow access to Media ports',
-            VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+            VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
             SecurityGroupIngress: PORTS.map((port) => {
                 return {
                     Description: 'ELB Traffic',
@@ -378,7 +378,7 @@ for (const p of PORTS) {
             Port: p.Port,
             Protocol: p.Protocol.toUpperCase(),
             TargetType: 'ip',
-            VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+            VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
 
             HealthCheckEnabled: true,
             HealthCheckIntervalSeconds: 30,

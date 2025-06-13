@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.0.0 - 2025-06-12
+
+- :rocket: Migrate to VPC-2.0
+
 ### v3.4.0 - 2025-06-09
 
 - :arrow_up: Update to MediaMTX@1.12.3
