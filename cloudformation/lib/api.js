@@ -68,6 +68,20 @@ const PORTS = [{
 });
 
 const Resources = {
+    ELBDNS: {
+        Type: 'AWS::Route53::RecordSet',
+        Properties: {
+            HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
+            Type : 'A',
+            Name: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+            Comment: cf.join(' ', [cf.stackName, 'DNS Entry']),
+            AliasTarget: {
+                DNSName: cf.getAtt('ELB', 'DNSName'),
+                EvaluateTargetHealth: true,
+                HostedZoneId: cf.getAtt('ELB', 'CanonicalHostedZoneID')
+            }
+        }
+    },
     Logs: {
         Type: 'AWS::Logs::LogGroup',
         Properties: {
@@ -393,6 +407,10 @@ for (const p of PORTS) {
 
 export default cf.merge({
     Parameters: {
+        SubdomainPrefix: {
+            Description: 'Prefix of domain: ie "video" of video.example.com',
+            Type: 'String'
+        },
         EnableExecute: {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
             Type: 'String',
