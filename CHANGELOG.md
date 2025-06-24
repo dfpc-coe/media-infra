@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.0.1 - 2025-06-24
+
+- :rocket: Fix paging bug in config
+
 ### v4.0.0 - 2025-06-12
 
 - :rocket: Migrate to VPC-2.0

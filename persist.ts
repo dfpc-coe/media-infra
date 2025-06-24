@@ -113,6 +113,7 @@ export default async function persist(): Promise<Record<string, any>> {
 
 export async function globalPaths(): Promise<Array<RemotePath>> {
     let total = 0;
+    const limit = 100;
     let page = 0;
 
     const paths = [];
@@ -142,7 +143,7 @@ export async function globalPaths(): Promise<Array<RemotePath>> {
         paths.push(...body.items);
 
         ++page;
-    } while (total > page * 1000);
+    } while (total > page * limit);
 
     return paths;
 }
