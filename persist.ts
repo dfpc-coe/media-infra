@@ -120,7 +120,7 @@ export async function globalPaths(): Promise<Array<RemotePath>> {
 
     do {
         const url = new URL(process.env.CLOUDTAK_URL + '/video/lease');
-        url.searchParams.append('limit', '100');
+        url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
         url.searchParams.append('ephemeral', 'all');
         url.searchParams.append('impersonate', 'true');
