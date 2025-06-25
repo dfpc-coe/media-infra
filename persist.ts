@@ -37,11 +37,12 @@ export async function schedule() {
 
         try {
             assert.deepEqual(oldConfig, newConfig);
+            console.error('ok - no difference in config');
         } catch (err) {
             if (err instanceof assert.AssertionError) {
                 console.error('DIFF:', diffString(oldConfig, newConfig));
 
-                writeConfig(newConfig);
+                writeConfig(defaultConfig(newConfig));
             } else {
                 throw err;
             }

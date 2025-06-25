@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.0.3 - 2025-06-24
+
+- :rocket: Fix diff generation for config
+
 ### v4.0.2 - 2025-06-24
 
 - :rocket: Use unified limit value
