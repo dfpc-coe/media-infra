@@ -56,6 +56,9 @@ export function defaultConfig(config: Record<string, any>): string {
     config.authHTTPExclude = [];
     config.authInternalUsers = [];
 
+    config.readTimeout = '30s';
+    config.writeTimeout = '30s';
+
     let configstr = YAML.stringify(config, (key, value) => {
         if (typeof value === 'boolean') {
             return value === true ? 'yes' : 'no';
