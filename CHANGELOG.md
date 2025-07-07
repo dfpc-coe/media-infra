@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.1.0 - 2025-07-07
+
+- :arrow_up: Update `mediamtx@1.13.0`
+
 ### v4.0.3 - 2025-06-24
 
 - :rocket: Fix diff generation for config
