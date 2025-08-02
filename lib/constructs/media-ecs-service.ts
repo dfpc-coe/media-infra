@@ -75,7 +75,7 @@ export class MediaEcsService extends Construct {
 
     // Add ECR permissions to execution role for image pulling
     if (this.taskDefinition.executionRole) {
-      this.taskDefinition.executionRole.addToPolicy(new iam.PolicyStatement({
+      (this.taskDefinition.executionRole as iam.Role).addToPolicy(new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: [
           'ecr:GetAuthorizationToken',

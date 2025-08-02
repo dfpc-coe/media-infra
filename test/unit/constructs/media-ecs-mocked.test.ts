@@ -10,7 +10,8 @@ jest.mock('aws-cdk-lib/aws-ecs', () => ({
       addToPrincipalOrResource: jest.fn()
     },
     executionRole: {
-      addToPrincipalOrResource: jest.fn()
+      addToPrincipalOrResource: jest.fn(),
+      addToPolicy: jest.fn()
     }
   })),
   FargateService: jest.fn().mockImplementation(() => ({
