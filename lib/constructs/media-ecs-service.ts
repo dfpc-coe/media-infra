@@ -73,6 +73,20 @@ export class MediaEcsService extends Construct {
       taskRole: taskRole,
     });
 
+    // Add ECR permissions to execution role for image pulling
+    if (this.taskDefinition.executionRole) {
+      (this.taskDefinition.executionRole as iam.Role).addToPolicy(new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'ecr:GetAuthorizationToken',
+          'ecr:BatchCheckLayerAvailability',
+          'ecr:GetDownloadUrlForLayer',
+          'ecr:BatchGetImage'
+        ],
+        resources: ['*']
+      }));
+    }
+
     // Add EFS volume
     this.taskDefinition.addVolume({
       name: 'mediamtx-config',
