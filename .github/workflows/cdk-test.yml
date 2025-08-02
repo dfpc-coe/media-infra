@@ -54,7 +54,7 @@ jobs:
           if [[ "${{ github.event.head_commit.message }}" == *"[force-deploy]"* ]]; then
             OVERRIDE="true"
           fi
-          echo "Breaking changes check would run here for media-infra"
+          ./scripts/github/check-breaking-changes.sh media prod $OVERRIDE
 
       - name: Run CDK synthesis test
         run: npm run synth
