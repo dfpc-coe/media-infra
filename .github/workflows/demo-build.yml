@@ -1,0 +1,116 @@
+name: Build and Push Docker Images - Demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker/**'
+      - 'docker-container/**'
+      - 'cdk.json'
+  workflow_call:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild even if version unchanged'
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      mediamtx-tag:
+        description: 'MediaMTX image tag'
+        value: ${{ jobs.build-images.outputs.mediamtx-tag }}
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild even if version unchanged'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+    environment: demo
+    outputs:
+      mediamtx-tag: ${{ steps.tags.outputs.mediamtx-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup CDK Environment
+        uses: ./.github/actions/setup-cdk
+        with:
+          aws-role-arn: ${{ secrets.DEMO_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.DEMO_AWS_REGION }}
+          role-session-name: GitHubActions-DockerBuild
+      
+      - name: Get ECR Repository and Build Tags
+        id: tags
+        run: |
+          # Get ECR repository ARN from BaseInfra exports
+          ECR_REPO_ARN=$(aws cloudformation describe-stacks \
+            --stack-name TAK-${{ vars.DEMO_STACK_NAME }}-BaseInfra \
+            --query 'Stacks[0].Outputs[?OutputKey==`EcrArtifactsRepoArnOutput`].OutputValue' \
+            --output text)
+          
+          if [[ -z "$ECR_REPO_ARN" ]]; then
+            echo "ERROR: ECR repository ARN not found in BaseInfra stack outputs"
+            exit 1
+          fi
+          
+          # Extract repository name from ARN and build URI
+          ECR_REPO_NAME=$(echo $ECR_REPO_ARN | cut -d'/' -f2)
+          ECR_REPO_URI="${{ secrets.DEMO_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.DEMO_AWS_REGION }}.amazonaws.com/${ECR_REPO_NAME}"
+          
+          MEDIAMTX_TAG=$(jq -r '.context."dev-test".docker.mediamtxImageTag' cdk.json)
+          
+          if [[ "${{ github.event.inputs.force_rebuild }}" == "true" ]]; then
+            TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+            MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}-${TIMESTAMP}"
+          else
+            MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}"
+          fi
+          
+          echo "ecr-repo-uri=$ECR_REPO_URI" >> $GITHUB_OUTPUT
+          echo "mediamtx-tag=$MEDIAMTX_TAG" >> $GITHUB_OUTPUT
+          echo "Using ECR repository: $ECR_REPO_URI"
+          echo "Building MediaMTX image with tag: $MEDIAMTX_TAG"
+      
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.DEMO_AWS_REGION }} | \
+            docker login --username AWS --password-stdin \
+            ${{ steps.tags.outputs.ecr-repo-uri }}
+      
+      - name: Build and Push MediaMTX Image
+        run: |
+          # Check if image already exists
+          if aws ecr describe-images --repository-name $(echo ${{ steps.tags.outputs.ecr-repo-uri }} | cut -d'/' -f2) --image-ids imageTag=${{ steps.tags.outputs.mediamtx-tag }} >/dev/null 2>&1; then
+            echo "✅ MediaMTX image ${{ steps.tags.outputs.mediamtx-tag }} already exists, skipping build"
+          else
+            echo "🔨 Building MediaMTX image ${{ steps.tags.outputs.mediamtx-tag }}"
+            
+            docker build \
+              -f docker/media-infra/Dockerfile \
+              --platform linux/amd64 \
+              --no-cache \
+              --rm \
+              -t ${{ steps.tags.outputs.ecr-repo-uri }}:${{ steps.tags.outputs.mediamtx-tag }} \
+              .
+            
+            docker push ${{ steps.tags.outputs.ecr-repo-uri }}:${{ steps.tags.outputs.mediamtx-tag }}
+            echo "✅ MediaMTX image pushed successfully"
+          fi
+      
+      - name: Output Image Information
+        run: |
+          echo "✅ Successfully built and pushed Docker image:"
+          echo "📦 MediaMTX: ${{ steps.tags.outputs.mediamtx-tag }}"
+          echo ""
+          echo "🚀 To deploy with this image, use:"
+          echo "npm run cdk deploy -- \\"
+          echo "  --context usePreBuiltImages=true \\"
+          echo "  --context mediamtxImageTag=${{ steps.tags.outputs.mediamtx-tag }}"

@@ -1,0 +1,51 @@
+# This Config file is reduced to the min required use case for COTAK
+# View: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
+# For full MediaMTX Config Options
+
+logLevel: info
+logDestinations: [stdout]
+
+readTimeout: 60s
+writeTimeout: 60s
+writeQueueSize: 1024
+udpMaxPayloadSize: 1472
+
+authMethod: http
+authHTTPAddress: http://example.com
+authHTTPExclude: []
+
+api: yes
+apiAddress: :9997
+apiEncryption: no
+apiAllowOrigin: '*'
+apiTrustedProxies: ['0.0.0.0/0']
+
+playback: yes
+rtsp: yes
+rtspTransports: [tcp]
+rtspEncryption: "no"
+rtspAddress: :8554
+rtspsAddress: :8322
+rtspAuthMethods: [basic]
+
+rtmp: yes
+rtmpAddress: :1935
+rtmpEncryption: "no"
+rtmpsAddress: :1936
+
+hls: yes
+hlsVariant: mpegts
+hlsAddress: :8888
+hlsEncryption: no
+hlsMuxerCloseAfter: 300s
+hlsSegmentCount: 10
+hlsSegmentDuration: 500ms
+hlsPartDuration: 500ms
+
+webrtc: no
+webrtcAddress: :8889
+webrtcEncryption: no
+webrtcAllowOrigin: '*'
+
+srt: yes
+srtAddress: :8890

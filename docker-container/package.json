@@ -1,0 +1,27 @@
+{
+  "name": "mediamtx-persist",
+  "version": "1.0.0",
+  "description": "MediaMTX configuration persistence for TAK.NZ",
+  "type": "module",
+  "main": "dist/persist.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/persist.js"
+  },
+
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "json-diff": "^1.0.6",
+    "undici": "^5.28.2",
+    "node-cron": "^3.0.3",
+    "yaml": "^2.3.4",
+    "typescript": "^5.3.3",
+    "tsx": "^4.19.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.3",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node-cron": "^3.0.11",
+    "@types/json-diff": "^1.0.3"
+  }
+}
