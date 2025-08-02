@@ -1,73 +1,228 @@
-<h1 align=center>TAK Media Server Infra</h1>
+# TAK Media Infrastructure
 
-<p align=center>Infrastructure to support a TAK Compatible Media Server</p>
+<p align=center>Modern AWS CDK v2 media streaming infrastructure for Team Awareness Kit (TAK) deployments
 
-## Persistance
+## Overview
 
-MediaMTX currently does not persist API operations to the config file, as such the Dockerfile is bundled with a
-persistance script that will convert the API response and push it to the mediamtx.yml file on change
+The [Team Awareness Kit (TAK)](https://tak.gov/solutions/emergency) provides Fire, Emergency Management, and First Responders an operationally agnostic tool for improved situational awareness and a common operational picture. 
 
-By default any user can read/write to a new path that is created and the persist script will explicity add paths that
-don't have a user assigned to them under the `any` user. If a path is created alongside a user with more granular permisisons
-about using that path, the persist script will NOT add the path to the `any` user.
+This repository deploys the media streaming infrastructure layer for a complete TAK deployment, providing robust MediaMTX streaming server with advanced capabilities such as RTMP, RTSP, RTMPS, RTSPS, SRTS, and HLS protocols with CloudTAK API authentication integration - all while using [free and open source software](https://en.wikipedia.org/wiki/Free_and_open-source_software).
 
-## Ports
+It is specifically targeted at the deployment of [TAK.NZ](https://tak.nz) via a CI/CD pipeline. Nevertheless others interested in deploying a similar infrastructure can do so by adapting the configuration items.
 
-| Port | Notes |
-| ---- | ----- |
-| 8554 | RTSP `rtsp://<server>:8554/<mystream>` |
-| 8889 | WebRTC `http://<server>:8889/<mystream>/publish` |
-| 8890 | SRT `srt://localhost:8890?streamid=publish:mystream&pkt_size=1316` |
+### Architecture Layers
 
-## AWS Deployment
+This media infrastructure requires the base infrastructure, authentication infrastructure, TAK infrastructure, and CloudTAK layers. Layers can be deployed in multiple independent environments. As an example:
 
-### Media Deployment
+```
+        PRODUCTION ENVIRONMENT                DEVELOPMENT ENVIRONMENT
+        Domain: tak.nz                        Domain: dev.tak.nz
 
-From the root directory, install the deploy dependencies
+┌─────────────────────────────────┐    ┌─────────────────────────────────┐
+│        MediaInfra               │    │        MediaInfra               │
+│    CloudFormation Stack         │    │    CloudFormation Stack         │
+│      (This Repository)          │    │      (This Repository)          │
+└─────────────────────────────────┘    └─────────────────────────────────┘
+                │                                        │
+                ▼                                        ▼
+┌─────────────────────────────────┐    ┌─────────────────────────────────┐
+│         CloudTAK                │    │         CloudTAK                │
+│    CloudFormation Stack         │    │    CloudFormation Stack         │
+└─────────────────────────────────┘    └─────────────────────────────────┘
+                │                                        │
+                ▼                                        ▼
+┌─────────────────────────────────┐    ┌─────────────────────────────────┐
+│         TakInfra                │    │         TakInfra                │
+│    CloudFormation Stack         │    │    CloudFormation Stack         │
+└─────────────────────────────────┘    └─────────────────────────────────┘
+                │                                        │
+                ▼                                        ▼
+┌─────────────────────────────────┐    ┌─────────────────────────────────┐
+│        AuthInfra                │    │        AuthInfra                │
+│    CloudFormation Stack         │    │    CloudFormation Stack         │
+└─────────────────────────────────┘    └─────────────────────────────────┘
+                │                                        │
+                ▼                                        ▼
+┌─────────────────────────────────┐    ┌─────────────────────────────────┐
+│        BaseInfra                │    │        BaseInfra                │
+│    CloudFormation Stack         │    │    CloudFormation Stack         │
+└─────────────────────────────────┘    └─────────────────────────────────┘
+```
 
-```sh
+| Layer | Repository | Description |
+|-------|------------|-------------|
+| **BaseInfra** | [`base-infra`](https://github.com/TAK-NZ/base-infra)  | Foundation: VPC, ECS, S3, KMS, ACM |
+| **AuthInfra** | [`auth-infra`](https://github.com/TAK-NZ/auth-infra) | SSO via Authentik, LDAP |
+| **TakInfra** | [`tak-infra`](https://github.com/TAK-NZ/tak-infra) | TAK Server |
+| **CloudTAK** | [`CloudTAK`](https://github.com/TAK-NZ/CloudTAK) | CloudTAK web interface, ETL, and media services |
+| **MediaInfra** | `media-infra` (this repo) | MediaMTX streaming server |
+
+**Deployment Order**: BaseInfra must be deployed first, followed by AuthInfra, TakInfra, CloudTAK, and finally MediaInfra. Each layer imports outputs from layers below via CloudFormation exports.
+
+## Quick Start
+
+### Prerequisites
+- [AWS Account](https://signin.aws.amazon.com/signup) with configured credentials
+- Base infrastructure stack (`TAK-<n>-BaseInfra`) must be deployed first
+- Authentication infrastructure stack (`TAK-<n>-AuthInfra`) must be deployed first
+- TAK infrastructure stack (`TAK-<n>-TakInfra`) must be deployed first
+- CloudTAK stack (`TAK-<n>-CloudTAK`) must be deployed first
+- Public Route 53 hosted zone (e.g., `tak.nz`)
+- [Node.js](https://nodejs.org/) and npm installed
+- **For CI/CD deployment:** See [AWS & GitHub Setup Guide](docs/AWS_GITHUB_SETUP.md) for MediaInfra-specific GitHub Actions configuration
+
+### Installation & Deployment
+
+```bash
+# 1. Install dependencies
 npm install
+
+# 2. Bootstrap CDK (first time only)
+npx cdk bootstrap --profile your-aws-profile
+
+# 3. Deploy development environment
+npm run deploy:dev
+
+# 4. Deploy production environment  
+npm run deploy:prod
 ```
 
-Deployment to AWS is handled via AWS Cloudformation. The template can be found in the `./cloudformation`
-directory. The deployment itself is performed by [Deploy](https://github.com/openaddresses/deploy) which
-was installed in the previous step.
+## Infrastructure Resources
 
-The deploy tool can be run via the following
+### Compute & Services
+- **ECS Service** - MediaMTX streaming server container
+- **Network Load Balancer** - Layer 4 load balancing for streaming protocols
+- **Target Groups** - RTMP, RTSP, RTMPS, RTSPS, SRTS, HLS, and API endpoints
 
-```sh
-npx deploy
+### Security & DNS
+- **Security Groups** - Fine-grained network access controls for streaming protocols
+- **Route 53 Records** - MediaMTX endpoint DNS management
+- **CloudTAK Integration** - Authentication via CloudTAK API
+
+## Docker Image Strategy
+
+This stack uses a **hybrid Docker image strategy** that supports both pre-built images from ECR and local Docker building for maximum flexibility.
+
+- **Strategy**: See [Docker Image Strategy Guide](docs/DOCKER_IMAGE_STRATEGY.md) for details
+- **CI/CD Mode**: Uses pre-built images for fast deployments
+- **Development Mode**: Builds images locally for flexible development
+- **Automatic Fallback**: Seamlessly switches between modes based on context parameters
+
+### Docker Images Used
+
+1. **MediaMTX Server**: Built from `docker/media-infra/Dockerfile` with MediaMTX and authentication integration
+
+### Usage Modes
+
+**CI/CD Deployments (Fast)**:
+```bash
+npm run deploy:dev -- --context usePreBuiltImages=true
+npm run deploy:prod -- --context usePreBuiltImages=true
 ```
 
-To install it globally - view the deploy [README](https://github.com/openaddresses/deploy)
-
-Deploy uses your existing AWS credentials. Ensure that your `~/.aws/credentials` has an entry like:
-
-```
-[coe]
-aws_access_key_id = <redacted>
-aws_secret_access_key = <redacted>
+**Local Development (Flexible)**:
+```bash
+npm run deploy:local:dev    # Builds images locally
+npm run deploy:local:prod   # Builds images locally
 ```
 
-Deployment can then be performed via the following:
+## Streaming Protocols & Ports
 
+| Port | Protocol | Description | Security |
+|------|----------|-------------|----------|
+| 1935 | RTMP | RTMP streaming | Conditional (insecure) |
+| 8554 | RTSP | RTSP streaming | Conditional (insecure) |
+| 1936 | RTMPS | RTMP over TLS | Always enabled |
+| 8555 | RTSPS | RTSP over TLS | Always enabled |
+| 8890 | SRTS | SRT with encryption | Always enabled |
+| 8888 | HTTPS | HLS over HTTPS | Always enabled |
+| 9997 | HTTPS | MediaMTX API HTTPS | Always enabled |
+
+**Security Note**: Insecure ports (1935, 8554) are only enabled when `enableInsecurePorts` is set to `true` in configuration.
+
+## Available Environments
+
+| Environment | Stack Name | Description | Domain | Monthly Cost* |
+|-------------|------------|-------------|--------|---------------|
+| `dev-test` | `TAK-Dev-MediaInfra` | Cost-optimized development | `media.dev.tak.nz` | ~$25 USD |
+| `prod` | `TAK-Prod-MediaInfra` | High-availability production | `media.tak.nz` | ~$85 USD |
+
+*Estimated AWS costs in USD for ap-southeast-2 region, excluding data transfer and streaming usage
+
+## Development Workflow
+
+### New NPM Scripts (Enhanced Developer Experience)
+```bash
+# Development and Testing
+npm run dev                    # Build and test
+npm run test:watch            # Run tests in watch mode
+npm run test:coverage         # Generate coverage report
+
+# Environment-Specific Deployment
+npm run deploy:dev            # Deploy to dev-test
+npm run deploy:prod           # Deploy to production
+npm run synth:dev             # Preview dev infrastructure
+npm run synth:prod            # Preview prod infrastructure
+
+# Infrastructure Management
+npm run cdk:diff:dev          # Show what would change in dev
+npm run cdk:diff:prod         # Show what would change in prod
+npm run cdk:bootstrap         # Bootstrap CDK in account
 ```
-npx deploy create <stack>
-npx deploy update <stack>
-npx deploy info <stack> --outputs
-npx deploy info <stack> --parameters
+
+### Configuration System
+
+The project uses **AWS CDK context-based configuration** for consistent deployments:
+
+- **All settings** stored in [`cdk.json`](cdk.json) under `context` section
+- **Version controlled** - consistent deployments across team members
+- **Runtime overrides** - use `--context` flag for one-off changes
+- **Environment-specific** - separate configs for dev-test and production
+
+#### Configuration Override Examples
+```bash
+# Enable insecure ports for development
+npm run deploy:dev -- --context enableInsecurePorts=true
+
+# Use pre-built images for faster deployment
+npm run deploy:prod -- --context usePreBuiltImages=true
+
+# Override CloudTAK URL
+npm run deploy:dev -- --context cloudtakUrl=https://custom.cloudtak.url
 ```
 
-Stacks can be created, deleted, cancelled, etc all via the deploy tool. For further information
-information about `deploy` functionality run the following for help.
+## 📚 Documentation
 
-```sh
-npx deploy
-```
+- **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Comprehensive deployment instructions and configuration options
+- **[🏗️ Architecture Guide](docs/ARCHITECTURE.md)** - Technical architecture and design decisions  
+- **[⚡ Quick Reference](docs/QUICK_REFERENCE.md)** - Fast deployment commands and environment comparison
+- **[⚙️ Configuration Guide](docs/PARAMETERS.md)** - Complete configuration management reference
+- **[🎥 Streaming Guide](docs/STREAMING_GUIDE.md)** - MediaMTX configuration and streaming protocols
+- **[🐳 Docker Image Strategy](docs/DOCKER_IMAGE_STRATEGY.md)** - Hybrid image strategy for fast CI/CD and flexible development
 
-Further help about a specific command can be obtained via something like:
+## Security Features
 
-```sh
-npx deploy info --help
-```
+### Enterprise-Grade Security
+- **🔑 KMS Encryption** - All data encrypted with customer-managed keys
+- **🛡️ Network Security** - Private subnets with controlled internet access
+- **🔒 IAM Policies** - Least-privilege access patterns throughout
+- **📋 Protocol Security** - TLS encryption for all production streaming protocols
+- **🔐 Authentication** - CloudTAK API integration for stream authentication
 
+## Getting Help
+
+### Common Issues
+- **Base Infrastructure** - Ensure base infrastructure stack is deployed first
+- **Authentication Infrastructure** - Ensure authentication infrastructure stack is deployed first
+- **TAK Infrastructure** - Ensure TAK infrastructure stack is deployed first
+- **CloudTAK** - Ensure CloudTAK stack is deployed first
+- **Route53 Hosted Zone** - Ensure your domain's hosted zone exists before deployment
+- **AWS Permissions** - CDK requires broad permissions for CloudFormation operations
+- **Docker Images** - CDK automatically handles Docker image building and ECR management
+- **Stack Name Matching** - Ensure stackName parameter matches your infrastructure deployments
+
+### Support Resources
+- **AWS CDK Documentation** - https://docs.aws.amazon.com/cdk/
+- **MediaMTX Documentation** - https://github.com/bluenviron/mediamtx
+- **TAK-NZ Project** - https://github.com/TAK-NZ/
+- **Issue Tracking** - Use GitHub Issues for bug reports and feature requests

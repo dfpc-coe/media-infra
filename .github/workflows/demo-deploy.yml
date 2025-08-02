@@ -1,0 +1,120 @@
+name: Demo Testing Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: false
+
+jobs:
+  # Run CDK unit tests and linting
+  test:
+    uses: ./.github/workflows/cdk-test.yml
+
+  # Build Docker images for demo environment
+  build-images:
+    uses: ./.github/workflows/demo-build.yml
+    secrets: inherit
+
+  # Validate production configuration without deploying
+  # Runs in parallel with build-images to save time
+  validate-prod:
+    runs-on: ubuntu-latest
+    environment: demo
+    needs: [test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup CDK Environment
+        uses: ./.github/actions/setup-cdk
+        with:
+          aws-role-arn: ${{ secrets.DEMO_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.DEMO_AWS_REGION }}
+          role-session-name: GitHubActions-Demo
+
+      - name: Validate CDK Synthesis (Prod Profile)
+        run: npm run cdk synth -- --context environment=prod
+
+      - name: Validate Change Set
+        run: |
+          # Check if override is requested
+          if [[ "${{ github.event.head_commit.message }}" == *"[force-deploy]"* ]]; then
+            echo "🚨 Force deploy detected - skipping change set validation"
+          else
+            echo "Change set validation would run here for TAK-${{ vars.DEMO_STACK_NAME }}-MediaInfra"
+          fi
+
+  # Deploy demo environment with production configuration for testing
+  # Uses built images and runs automated tests
+  deploy-and-test:
+    runs-on: ubuntu-latest
+    environment: demo
+    needs: [validate-prod, build-images]
+    outputs:
+      mediamtx-tag: ${{ steps.images.outputs.mediamtx-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup CDK Environment
+        uses: ./.github/actions/setup-cdk
+        with:
+          aws-role-arn: ${{ secrets.DEMO_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.DEMO_AWS_REGION }}
+          role-session-name: GitHubActions-Demo
+
+      - name: Extract Image Tags
+        id: images
+        run: |
+          MEDIAMTX_TAG=$(jq -r '.context."dev-test".docker.mediamtxImageTag' cdk.json)
+          MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}"
+          
+          echo "mediamtx-tag=$MEDIAMTX_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy Demo with Prod Profile
+        run: npm run cdk deploy -- --context environment=prod --context usePreBuiltImages=true --context mediamtxImageTag=${{ steps.images.outputs.mediamtx-tag }} --require-approval never
+
+      - name: Wait for Testing Period
+        run: sleep ${{ vars.DEMO_TEST_DURATION || '300' }}
+
+      - name: Run Automated Tests
+        run: |
+          echo "Placeholder for automated tests"
+          # TODO: Add health checks and integration tests
+          # Health check URL should be retrieved from MediaInfra stack outputs
+
+  # Always revert demo environment back to dev-test configuration
+  # Ensures demo environment is left in a consistent state regardless of test results
+  revert-to-dev-test:
+    runs-on: ubuntu-latest
+    environment: demo
+    needs: [deploy-and-test]
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup CDK Environment
+        uses: ./.github/actions/setup-cdk
+        with:
+          aws-role-arn: ${{ secrets.DEMO_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.DEMO_AWS_REGION }}
+          role-session-name: GitHubActions-Demo
+
+      - name: Validate CDK Synthesis (Dev-Test Profile)
+        run: npm run cdk synth -- --context environment=dev-test
+
+      - name: Revert Demo to Dev-Test Profile
+        run: npm run cdk deploy -- --context environment=dev-test --context usePreBuiltImages=true --context mediamtxImageTag=${{ needs.deploy-and-test.outputs.mediamtx-tag }} --require-approval never

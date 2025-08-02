@@ -1,0 +1,65 @@
+name: Production Deployment
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment without tag'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/cdk-test.yml
+
+  build-images:
+    uses: ./.github/workflows/production-build.yml
+    secrets: inherit
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [test, build-images]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup CDK Environment
+        uses: ./.github/actions/setup-cdk
+        with:
+          aws-role-arn: ${{ secrets.PROD_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.PROD_AWS_REGION }}
+          role-session-name: GitHubActions-Production
+
+      - name: Bootstrap CDK (if needed)
+        run: |
+          if ! aws cloudformation describe-stacks --stack-name CDKToolkit 2>/dev/null; then
+            npx cdk bootstrap aws://${{ secrets.PROD_AWS_ACCOUNT_ID }}/${{ secrets.PROD_AWS_REGION }} --context environment=prod
+          fi
+
+      - name: Extract Image Tags
+        id: images
+        run: |
+          MEDIAMTX_TAG=$(jq -r '.context."prod".docker.mediamtxImageTag' cdk.json)
+          MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}"
+          
+          echo "mediamtx-tag=$MEDIAMTX_TAG" >> $GITHUB_OUTPUT
+
+      - name: Validate Production Change Set
+        run: |
+          # Check if override is requested
+          if [[ "${{ github.event.head_commit.message }}" == *"[force-deploy]"* ]]; then
+            echo "🚨 Force deploy detected - skipping change set validation"
+          else
+            echo "Change set validation would run here for TAK-${{ vars.PROD_STACK_NAME }}-MediaInfra"
+          fi
+
+      - name: Deploy Production
+        run: npm run cdk deploy -- --context environment=prod --context usePreBuiltImages=true --context mediamtxImageTag=${{ steps.images.outputs.mediamtx-tag }} --require-approval never

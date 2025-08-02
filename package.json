@@ -1,46 +1,59 @@
 {
-    "name": "@tak-ps/media-infra",
-    "type": "module",
-    "private": true,
-    "version": "4.1.0",
-    "description": "Infrastructure to support LDAP based auth in TAK",
-    "scripts": {
-        "build": "tsc",
-        "lint": "eslint persist.ts cloudformation/"
-    },
-    "engines": {
-        "node": ">= 22"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/tak-ps/etl.git"
-    },
-    "author": "Nick Ingalls <nick@ingalls.ca>",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/tak-ps/auth-infra/issues"
-    },
-    "homepage": "https://github.com/tak-ps/auth-infra#readme",
-    "dependencies": {
-        "@aws-sdk/client-secrets-manager": "^3.787.0",
-        "@openaddresses/batch-alarms": "^4.0.0",
-        "@openaddresses/cloudfriend": "^7.0.0",
-        "@openaddresses/deploy": "^9.1.0",
-        "json-diff": "^1.0.6",
-        "jsonwebtoken": "^9.0.2",
-        "node-cron": "^4.0.0",
-        "tsx": "^4.19.2",
-        "undici": "^7.8.0",
-        "yaml": "^2.6.0"
-    },
-    "devDependencies": {
-        "@types/json-diff": "^1.0.3",
-        "@types/jsonwebtoken": "^9.0.9",
-        "@types/node": "^24.0.0",
-        "eslint": "^9.9.0",
-        "eslint-plugin-n": "^17.10.2",
-        "tape": "^5.9.0",
-        "typescript": "^5.6.3",
-        "typescript-eslint": "^8.12.2"
-    }
+  "name": "@tak-nz/media-infra",
+  "version": "0.1.0",
+  "description": "Media infrastructure for TAK-NZ projects using AWS CDK",
+  "private": true,
+  "bin": {
+    "cdk": "bin/cdk.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "unset CDK_DEFAULT_ACCOUNT && unset CDK_DEFAULT_REGION && jest",
+    "test:watch": "unset CDK_DEFAULT_ACCOUNT && unset CDK_DEFAULT_REGION && jest --watch",
+    "test:coverage": "unset CDK_DEFAULT_ACCOUNT && unset CDK_DEFAULT_REGION && jest --coverage",
+    "cdk": "cdk",
+    "clean": "rm -f bin/*.js bin/*.d.ts lib/*.js lib/*.d.ts lib/constructs/*.js lib/constructs/*.d.ts test/*.js test/*.d.ts; rm -rf cdk.out/*",
+    "dev": "npm run build && npm run test",
+    "deploy:dev": "npm run build && cdk deploy --context environment=dev-test --no-warnings",
+    "deploy:prod": "npm run build && cdk deploy --context environment=prod --no-warnings",
+    "deploy:local:dev": "npm run build && cdk deploy --context environment=dev-test --context usePreBuiltImages=false --no-warnings",
+    "deploy:local:prod": "npm run build && cdk deploy --context environment=prod --context usePreBuiltImages=false --no-warnings",
+    "synth:dev": "npm run build && cdk synth --context environment=dev-test",
+    "synth:prod": "npm run build && cdk synth --context environment=prod",
+    "cdk:diff:dev": "npm run build && cdk diff --context environment=dev-test",
+    "cdk:diff:prod": "npm run build && cdk diff --context environment=prod",
+    "cdk:bootstrap": "cdk bootstrap",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "diff": "cdk diff",
+    "synth": "cdk synth"
+  },
+  "engines": {
+    "node": ">= 22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TAK-NZ/media-infra.git"
+  },
+  "author": "TAK.NZ - https://tak.nz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TAK-NZ/media-infra/issues"
+  },
+  "homepage": "https://github.com/TAK-NZ/media-infra#readme",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "22.7.9",
+    "aws-cdk": "^2.1020.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.6.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.167.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  }
 }
