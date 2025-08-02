@@ -62,13 +62,14 @@ jobs:
           ECR_REPO_NAME=$(echo $ECR_REPO_ARN | cut -d'/' -f2)
           ECR_REPO_URI="${{ secrets.PROD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${ECR_REPO_NAME}"
           
-          MEDIAMTX_TAG=$(jq -r '.context."prod".docker.mediamtxImageTag' cdk.json)
+          VERSION=$(jq -r '.context."prod".mediamtx.version' cdk.json)
+          REVISION=$(jq -r '.context."prod".mediamtx.buildRevision' cdk.json)
           
           if [[ "${{ github.event.inputs.force_rebuild }}" == "true" ]]; then
             TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-            MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}-${TIMESTAMP}"
+            MEDIAMTX_TAG="mediamtx-${VERSION}-r${REVISION}-${TIMESTAMP}"
           else
-            MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}"
+            MEDIAMTX_TAG="mediamtx-${VERSION}-r${REVISION}"
           fi
           
           echo "ecr-repo-uri=$ECR_REPO_URI" >> $GITHUB_OUTPUT
