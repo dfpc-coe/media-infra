@@ -13,7 +13,7 @@ if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" >/dev/null 2>
 fi
 
 # Generate CDK template with same context as deployment
-npm run cdk synth -- --context environment=prod --context stackName=Demo > template.json
+npm run cdk synth -- --context envType=prod --context stackName=Demo > template.json
 
 # Create change set
 aws cloudformation create-change-set \

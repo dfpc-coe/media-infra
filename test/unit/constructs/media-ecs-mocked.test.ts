@@ -106,17 +106,35 @@ describe('MediaEcsService Construct (Mocked)', () => {
       new MediaEcsService(stack, 'TestMediaEcsService', {
         environment: 'dev-test',
         envConfig: mockDevConfig,
-        vpc,
-        ecsCluster,
-        securityGroup,
+        infrastructure: {
+          vpc,
+          ecsCluster,
+          kmsKey,
+          securityGroups: {
+            mediaMtx: securityGroup,
+            nlb: securityGroup,
+            efs: securityGroup
+          }
+        },
+        network: {
+          hostedZone: {} as any,
+          certificate: {} as any,
+          mediaHostname: 'media',
+          hostedZoneName: 'test.com'
+        },
+        secrets: {
+          signingSecret,
+          mediaSecret,
+          cloudTakUrl: 'https://cloudtak.test.com'
+        },
+        storage: {
+          efs: {
+            fileSystemId: 'fs-12345678',
+            accessPointId: 'fsap-12345678'
+          }
+        },
         targetGroups,
-        signingSecret,
-        mediaSecret,
-        cloudTakUrl: 'https://cloudtak.test.com',
-        stackNameComponent: 'Dev',
-        kmsKey,
-        efsFileSystemId: 'fs-12345678',
-        efsAccessPointId: 'fsap-12345678'
+        stackNameComponent: 'Dev'
       });
     }).not.toThrow();
   });

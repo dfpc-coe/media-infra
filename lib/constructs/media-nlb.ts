@@ -5,6 +5,7 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
+import { MEDIAMTX_PORTS } from '../utils/constants';
 
 export interface MediaNlbProps {
   vpc: ec2.IVpc;
@@ -48,65 +49,65 @@ export class MediaNlb extends Construct {
     // Create target groups (5 total - within AWS limit)
     this.targetGroups = {
       rtmp: new elbv2.NetworkTargetGroup(this, 'RtmpTargetGroup', {
-        port: 1935,
+        port: MEDIAMTX_PORTS.RTMP,
         protocol: elbv2.Protocol.TCP,
         vpc: props.vpc,
         targetType: elbv2.TargetType.IP,
         healthCheck: {
           protocol: elbv2.Protocol.TCP,
-          port: '9997',
+          port: MEDIAMTX_PORTS.API_HTTPS.toString(),
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(10),
           healthyThresholdCount: 5,
         },
       }),
       rtsp: new elbv2.NetworkTargetGroup(this, 'RtspTargetGroup', {
-        port: 8554,
+        port: MEDIAMTX_PORTS.RTSP,
         protocol: elbv2.Protocol.TCP,
         vpc: props.vpc,
         targetType: elbv2.TargetType.IP,
         healthCheck: {
           protocol: elbv2.Protocol.TCP,
-          port: '9997',
+          port: MEDIAMTX_PORTS.API_HTTPS.toString(),
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(10),
           healthyThresholdCount: 5,
         },
       }),
       srts: new elbv2.NetworkTargetGroup(this, 'SrtsTargetGroup', {
-        port: 8890,
+        port: MEDIAMTX_PORTS.SRTS,
         protocol: elbv2.Protocol.UDP,
         vpc: props.vpc,
         targetType: elbv2.TargetType.IP,
         healthCheck: {
           protocol: elbv2.Protocol.TCP,
-          port: '9997',
+          port: MEDIAMTX_PORTS.API_HTTPS.toString(),
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(10),
           healthyThresholdCount: 5,
         },
       }),
       hls: new elbv2.NetworkTargetGroup(this, 'HlsTargetGroup', {
-        port: 8888,
+        port: MEDIAMTX_PORTS.HLS_HTTPS,
         protocol: elbv2.Protocol.TCP,
         vpc: props.vpc,
         targetType: elbv2.TargetType.IP,
         healthCheck: {
           protocol: elbv2.Protocol.TCP,
-          port: '9997',
+          port: MEDIAMTX_PORTS.API_HTTPS.toString(),
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(10),
           healthyThresholdCount: 5,
         },
       }),
       api: new elbv2.NetworkTargetGroup(this, 'ApiTargetGroup', {
-        port: 9997,
+        port: MEDIAMTX_PORTS.API_HTTPS,
         protocol: elbv2.Protocol.TCP,
         vpc: props.vpc,
         targetType: elbv2.TargetType.IP,
         healthCheck: {
           protocol: elbv2.Protocol.TCP,
-          port: '9997',
+          port: MEDIAMTX_PORTS.API_HTTPS.toString(),
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(10),
           healthyThresholdCount: 5,
@@ -120,14 +121,14 @@ export class MediaNlb extends Construct {
     if (enableInsecurePorts) {
       // Insecure RTMP listener
       this.loadBalancer.addListener('RtmpListener', {
-        port: 1935,
+        port: MEDIAMTX_PORTS.RTMP,
         protocol: elbv2.Protocol.TCP,
         defaultTargetGroups: [this.targetGroups.rtmp],
       });
 
       // Insecure RTSP listener
       this.loadBalancer.addListener('RtspListener', {
-        port: 8554,
+        port: MEDIAMTX_PORTS.RTSP,
         protocol: elbv2.Protocol.TCP,
         defaultTargetGroups: [this.targetGroups.rtsp],
       });
@@ -135,7 +136,7 @@ export class MediaNlb extends Construct {
 
     // Secure RTMPS listener (TLS terminated)
     this.loadBalancer.addListener('RtmpsListener', {
-      port: 1936,
+      port: MEDIAMTX_PORTS.RTMPS,
       protocol: elbv2.Protocol.TLS,
       certificates: [props.certificate],
       defaultTargetGroups: [this.targetGroups.rtmp], // Same target group as RTMP
@@ -143,7 +144,7 @@ export class MediaNlb extends Construct {
 
     // Secure RTSPS listener (TLS terminated)
     this.loadBalancer.addListener('RtspsListener', {
-      port: 8555,
+      port: MEDIAMTX_PORTS.RTSPS,
       protocol: elbv2.Protocol.TLS,
       certificates: [props.certificate],
       defaultTargetGroups: [this.targetGroups.rtsp], // Same target group as RTSP
@@ -151,14 +152,14 @@ export class MediaNlb extends Construct {
 
     // SRTS listener (built-in encryption)
     this.loadBalancer.addListener('SrtsListener', {
-      port: 8890,
+      port: MEDIAMTX_PORTS.SRTS,
       protocol: elbv2.Protocol.UDP,
       defaultTargetGroups: [this.targetGroups.srts],
     });
 
     // HLS HTTPS listener
     this.loadBalancer.addListener('HlsListener', {
-      port: 8888,
+      port: MEDIAMTX_PORTS.HLS_HTTPS,
       protocol: elbv2.Protocol.TLS,
       certificates: [props.certificate],
       defaultTargetGroups: [this.targetGroups.hls],
@@ -166,7 +167,7 @@ export class MediaNlb extends Construct {
 
     // API HTTPS listener
     this.loadBalancer.addListener('ApiListener', {
-      port: 9997,
+      port: MEDIAMTX_PORTS.API_HTTPS,
       protocol: elbv2.Protocol.TLS,
       certificates: [props.certificate],
       defaultTargetGroups: [this.targetGroups.api],

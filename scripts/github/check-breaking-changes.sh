@@ -18,7 +18,7 @@ PATTERNS=(
 echo "🔍 Checking for breaking changes in $STACK_TYPE stack..."
 
 # Generate CDK diff
-npm run cdk diff -- --context environment=$CONTEXT_ENV --context stackName=Demo > stack-diff.txt 2>&1
+npm run cdk diff -- --context envType=$CONTEXT_ENV --context stackName=Demo > stack-diff.txt 2>&1
 
 # Check for breaking patterns
 BREAKING_FOUND=false
