@@ -47,8 +47,10 @@ jobs:
       - name: Extract Image Tags
         id: images
         run: |
-          MEDIAMTX_TAG=$(jq -r '.context."prod".docker.mediamtxImageTag' cdk.json)
-          MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}"
+          VERSION=$(jq -r '.context."prod".mediamtx.version' cdk.json)
+          REVISION=$(jq -r '.context."prod".mediamtx.buildRevision' cdk.json)
+          
+          MEDIAMTX_TAG="mediamtx-${VERSION}-r${REVISION}"
           
           echo "mediamtx-tag=$MEDIAMTX_TAG" >> $GITHUB_OUTPUT
 
@@ -58,7 +60,7 @@ jobs:
           if [[ "${{ github.event.head_commit.message }}" == *"[force-deploy]"* ]]; then
             echo "🚨 Force deploy detected - skipping change set validation"
           else
-            echo "Change set validation would run here for TAK-${{ vars.PROD_STACK_NAME }}-MediaInfra"
+            ./scripts/github/validate-changeset.sh TAK-${{ vars.PROD_STACK_NAME }}-MediaInfra
           fi
 
       - name: Deploy Production

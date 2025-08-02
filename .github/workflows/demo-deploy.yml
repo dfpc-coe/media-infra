@@ -45,7 +45,7 @@ jobs:
           role-session-name: GitHubActions-Demo
 
       - name: Validate CDK Synthesis (Prod Profile)
-        run: npm run cdk synth -- --context environment=prod
+        run: npm run cdk synth -- --context envType=prod --context stackName=${{ vars.DEMO_STACK_NAME }}
 
       - name: Validate Change Set
         run: |
@@ -53,7 +53,7 @@ jobs:
           if [[ "${{ github.event.head_commit.message }}" == *"[force-deploy]"* ]]; then
             echo "🚨 Force deploy detected - skipping change set validation"
           else
-            echo "Change set validation would run here for TAK-${{ vars.DEMO_STACK_NAME }}-MediaInfra"
+            ./scripts/github/validate-changeset.sh TAK-${{ vars.DEMO_STACK_NAME }}-MediaInfra
           fi
 
   # Deploy demo environment with production configuration for testing
@@ -78,13 +78,15 @@ jobs:
       - name: Extract Image Tags
         id: images
         run: |
-          MEDIAMTX_TAG=$(jq -r '.context."dev-test".docker.mediamtxImageTag' cdk.json)
-          MEDIAMTX_TAG="mediamtx-${MEDIAMTX_TAG}"
+          VERSION=$(jq -r '.context."dev-test".mediamtx.version' cdk.json)
+          REVISION=$(jq -r '.context."dev-test".mediamtx.buildRevision' cdk.json)
+          
+          MEDIAMTX_TAG="mediamtx-${VERSION}-r${REVISION}"
           
           echo "mediamtx-tag=$MEDIAMTX_TAG" >> $GITHUB_OUTPUT
 
       - name: Deploy Demo with Prod Profile
-        run: npm run cdk deploy -- --context environment=prod --context usePreBuiltImages=true --context mediamtxImageTag=${{ steps.images.outputs.mediamtx-tag }} --require-approval never
+        run: npm run cdk deploy -- --context envType=prod --context stackName=${{ vars.DEMO_STACK_NAME }} --context usePreBuiltImages=true --context mediamtxImageTag=${{ steps.images.outputs.mediamtx-tag }} --require-approval never
 
       - name: Wait for Testing Period
         run: sleep ${{ vars.DEMO_TEST_DURATION || '300' }}
@@ -114,7 +116,7 @@ jobs:
           role-session-name: GitHubActions-Demo
 
       - name: Validate CDK Synthesis (Dev-Test Profile)
-        run: npm run cdk synth -- --context environment=dev-test
+        run: npm run cdk synth -- --context envType=dev-test --context stackName=${{ vars.DEMO_STACK_NAME }}
 
       - name: Revert Demo to Dev-Test Profile
-        run: npm run cdk deploy -- --context environment=dev-test --context usePreBuiltImages=true --context mediamtxImageTag=${{ needs.deploy-and-test.outputs.mediamtx-tag }} --require-approval never
+        run: npm run cdk deploy -- --context envType=dev-test --context stackName=${{ vars.DEMO_STACK_NAME }} --context usePreBuiltImages=true --context mediamtxImageTag=${{ needs.deploy-and-test.outputs.mediamtx-tag }} --require-approval never
