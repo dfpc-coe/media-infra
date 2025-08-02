@@ -10,13 +10,16 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
 import { ContextEnvironmentConfig } from '../stack-config';
+import { MEDIAMTX_PORTS } from '../utils/constants';
+import type { InfrastructureConfig, NetworkConfig, SecretsConfig, StorageConfig } from '../construct-configs';
 
 export interface MediaEcsServiceProps {
   environment: 'prod' | 'dev-test';
   envConfig: ContextEnvironmentConfig;
-  vpc: ec2.IVpc;
-  ecsCluster: ecs.ICluster;
-  securityGroup: ec2.SecurityGroup;
+  infrastructure: InfrastructureConfig;
+  network: NetworkConfig;
+  secrets: SecretsConfig;
+  storage: StorageConfig;
   targetGroups: {
     rtmp: elbv2.NetworkTargetGroup;
     rtsp: elbv2.NetworkTargetGroup;
@@ -24,13 +27,8 @@ export interface MediaEcsServiceProps {
     hls: elbv2.NetworkTargetGroup;
     api: elbv2.NetworkTargetGroup;
   };
-  signingSecret: secretsmanager.ISecret;
-  mediaSecret: secretsmanager.ISecret;
-  cloudTakUrl: string;
   stackNameComponent: string;
-  kmsKey: kms.IKey;
-  efsFileSystemId: string;
-  efsAccessPointId: string;
+  containerImageUri?: string;
 }
 
 export class MediaEcsService extends Construct {
@@ -63,8 +61,8 @@ export class MediaEcsService extends Construct {
         'elasticfilesystem:DescribeFileSystems'
       ],
       resources: [
-        `arn:aws:elasticfilesystem:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:file-system/${props.efsFileSystemId}`,
-        `arn:aws:elasticfilesystem:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:access-point/${props.efsAccessPointId}`
+        `arn:aws:elasticfilesystem:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:file-system/${props.storage.efs.fileSystemId}`,
+        `arn:aws:elasticfilesystem:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:access-point/${props.storage.efs.accessPointId}`
       ]
     }));
 
@@ -79,25 +77,21 @@ export class MediaEcsService extends Construct {
     this.taskDefinition.addVolume({
       name: 'mediamtx-config',
       efsVolumeConfiguration: {
-        fileSystemId: props.efsFileSystemId,
+        fileSystemId: props.storage.efs.fileSystemId,
         transitEncryption: 'ENABLED',
         authorizationConfig: {
-          accessPointId: props.efsAccessPointId,
+          accessPointId: props.storage.efs.accessPointId,
           iam: 'ENABLED'
         }
       }
     });
 
     // Determine container image strategy
-    const usePreBuiltImages = props.envConfig.usePreBuiltImages ?? false;
-    
     let containerImage: ecs.ContainerImage;
     
-    if (usePreBuiltImages) {
+    if (props.containerImageUri) {
       // Use pre-built image from ECR
-      const mediamtxVersion = props.envConfig.docker?.mediamtxImageTag ?? 'latest';
-      const imageUri = `${cdk.Stack.of(this).account}.dkr.ecr.${cdk.Stack.of(this).region}.amazonaws.com/tak-${props.stackNameComponent.toLowerCase()}-baseinfra-artifacts:mediamtx-${mediamtxVersion}`;
-      containerImage = ecs.ContainerImage.fromRegistry(imageUri);
+      containerImage = ecs.ContainerImage.fromRegistry(props.containerImageUri);
     } else {
       // Build image locally
       const dockerAsset = new ecrAssets.DockerImageAsset(this, 'MediaMtxDockerAsset', {
@@ -137,14 +131,14 @@ export class MediaEcsService extends Construct {
         logGroup: logGroup,
       }),
       environment: {
-        CLOUDTAK_URL: props.cloudTakUrl,
+        CLOUDTAK_URL: props.secrets.cloudTakUrl,
       },
       secrets: {
-        SigningSecret: ecs.Secret.fromSecretsManager(props.signingSecret),
-        MediaSecret: ecs.Secret.fromSecretsManager(props.mediaSecret),
+        SigningSecret: ecs.Secret.fromSecretsManager(props.secrets.signingSecret),
+        MediaSecret: ecs.Secret.fromSecretsManager(props.secrets.mediaSecret),
       },
       healthCheck: {
-        command: ['CMD-SHELL', 'nc -z localhost 9997 || exit 1'],
+        command: ['CMD-SHELL', `nc -z localhost ${MEDIAMTX_PORTS.API_HTTPS} || exit 1`],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(5),
         retries: 3,
@@ -161,21 +155,21 @@ export class MediaEcsService extends Construct {
 
     // Add port mappings
     container.addPortMappings(
-      { containerPort: 1935, protocol: ecs.Protocol.TCP }, // RTMP
-      { containerPort: 8554, protocol: ecs.Protocol.TCP }, // RTSP
-      { containerPort: 8890, protocol: ecs.Protocol.UDP }, // SRTS
-      { containerPort: 8888, protocol: ecs.Protocol.TCP }, // HLS
-      { containerPort: 9997, protocol: ecs.Protocol.TCP }, // API + Playback
+      { containerPort: MEDIAMTX_PORTS.RTMP, protocol: ecs.Protocol.TCP }, // RTMP
+      { containerPort: MEDIAMTX_PORTS.RTSP, protocol: ecs.Protocol.TCP }, // RTSP
+      { containerPort: MEDIAMTX_PORTS.SRTS, protocol: ecs.Protocol.UDP }, // SRTS
+      { containerPort: MEDIAMTX_PORTS.HLS_HTTPS, protocol: ecs.Protocol.TCP }, // HLS
+      { containerPort: MEDIAMTX_PORTS.API_HTTPS, protocol: ecs.Protocol.TCP }, // API + Playback
     );
 
     // Grant secrets access
-    props.signingSecret.grantRead(this.taskDefinition.taskRole);
-    props.mediaSecret.grantRead(this.taskDefinition.taskRole);
+    props.secrets.signingSecret.grantRead(this.taskDefinition.taskRole);
+    props.secrets.mediaSecret.grantRead(this.taskDefinition.taskRole);
 
     // Grant KMS permissions for secrets decryption (following TAK infrastructure pattern)
-    props.kmsKey.grantDecrypt(this.taskDefinition.taskRole);
+    props.infrastructure.kmsKey.grantDecrypt(this.taskDefinition.taskRole);
     if (this.taskDefinition.executionRole) {
-      props.kmsKey.grantDecrypt(this.taskDefinition.executionRole);
+      props.infrastructure.kmsKey.grantDecrypt(this.taskDefinition.executionRole);
     }
 
     // Add ECS Exec permissions if enabled
@@ -200,10 +194,10 @@ export class MediaEcsService extends Construct {
 
     // Create ECS service
     this.service = new ecs.FargateService(this, 'MediaMtxService', {
-      cluster: props.ecsCluster,
+      cluster: props.infrastructure.ecsCluster,
       taskDefinition: this.taskDefinition,
       desiredCount: props.envConfig.ecs.desiredCount,
-      securityGroups: [props.securityGroup],
+      securityGroups: [props.infrastructure.securityGroups.mediaMtx],
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
       },
@@ -213,24 +207,24 @@ export class MediaEcsService extends Construct {
     // Register with target groups
     props.targetGroups.rtmp.addTarget(this.service.loadBalancerTarget({
       containerName: 'MediaMtxContainer',
-      containerPort: 1935,
+      containerPort: MEDIAMTX_PORTS.RTMP,
     }));
     props.targetGroups.rtsp.addTarget(this.service.loadBalancerTarget({
       containerName: 'MediaMtxContainer',
-      containerPort: 8554,
+      containerPort: MEDIAMTX_PORTS.RTSP,
     }));
     props.targetGroups.srts.addTarget(this.service.loadBalancerTarget({
       containerName: 'MediaMtxContainer',
-      containerPort: 8890,
+      containerPort: MEDIAMTX_PORTS.SRTS,
       protocol: ecs.Protocol.UDP,
     }));
     props.targetGroups.hls.addTarget(this.service.loadBalancerTarget({
       containerName: 'MediaMtxContainer',
-      containerPort: 8888,
+      containerPort: MEDIAMTX_PORTS.HLS_HTTPS,
     }));
     props.targetGroups.api.addTarget(this.service.loadBalancerTarget({
       containerName: 'MediaMtxContainer',
-      containerPort: 9997,
+      containerPort: MEDIAMTX_PORTS.API_HTTPS,
     }));
   }
 }

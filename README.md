@@ -99,6 +99,11 @@ npm run deploy:prod
 - **Route 53 Records** - MediaMTX endpoint DNS management
 - **CloudTAK Integration** - Authentication via CloudTAK API
 
+### CDK Utilities
+- **Context Overrides** - Command-line parameter override system (`lib/utils/context-overrides.ts`)
+- **Constants** - Centralized MediaMTX port and infrastructure constants (`lib/utils/constants.ts`)
+- **Tag Helpers** - Standardized resource tagging utilities (`lib/utils/tag-helpers.ts`)
+
 ## Docker Image Strategy
 
 This stack uses a **hybrid Docker image strategy** that supports both pre-built images from ECR and local Docker building for maximum flexibility.
@@ -187,8 +192,14 @@ npm run deploy:dev -- --context enableInsecurePorts=true
 # Use pre-built images for faster deployment
 npm run deploy:prod -- --context usePreBuiltImages=true
 
-# Override CloudTAK URL
-npm run deploy:dev -- --context cloudtakUrl=https://custom.cloudtak.url
+# Override ECS configuration
+npm run deploy:dev -- --context taskCpu=1024 --context taskMemory=2048 --context desiredCount=2
+
+# Override ECR settings
+npm run deploy:prod -- --context imageRetentionCount=10 --context scanOnPush=true
+
+# Override MediaMTX version
+npm run deploy:dev -- --context mediamtxVersion=v1.5.0 --context buildRevision=1
 ```
 
 ## 📚 Documentation

@@ -72,39 +72,73 @@ The TAK Media Infrastructure uses **AWS CDK context-based configuration** for co
 
 ## **🚀 Runtime Configuration Overrides**
 
+The MediaInfra CDK includes a comprehensive context override system that allows any configuration parameter to be overridden at deployment time via command-line arguments.
+
 ### **Basic Override Syntax**
 ```bash
 npm run deploy:dev -- --context parameterName=value
 ```
 
-### **Common Override Examples**
+### **Available Override Parameters**
 
-#### **Streaming Protocol Configuration**
+#### **Top-Level Configuration**
 ```bash
-# Enable insecure ports for development
+# Stack naming
+npm run deploy:dev -- --context stackName=CustomName
+
+# Streaming protocol configuration
 npm run deploy:dev -- --context enableInsecurePorts=true
-
-# Disable insecure ports (default)
-npm run deploy:prod -- --context enableInsecurePorts=false
-```
-
-#### **Docker Image Strategy**
-```bash
-# Use pre-built images for faster deployment
-npm run deploy:dev -- --context usePreBuiltImages=true
 npm run deploy:prod -- --context usePreBuiltImages=true
-
-# Force local image building
-npm run deploy:dev -- --context usePreBuiltImages=false
 ```
 
+#### **ECS Configuration**
+```bash
+# Task resource allocation
+npm run deploy:dev -- --context taskCpu=1024 --context taskMemory=2048
+
+# Service scaling
+npm run deploy:prod -- --context desiredCount=3
+
+# Logging and debugging
+npm run deploy:dev -- --context enableDetailedLogging=true --context enableEcsExec=true
+```
+
+#### **ECR Configuration**
+```bash
+# Image management
+npm run deploy:prod -- --context imageRetentionCount=20 --context scanOnPush=true
+```
+
+#### **General Infrastructure**
+```bash
+# Resource lifecycle
+npm run deploy:dev -- --context removalPolicy=DESTROY
+
+# Monitoring
+npm run deploy:prod -- --context enableContainerInsights=true
+```
+
+#### **Docker Image Configuration**
+```bash
+# MediaMTX image versioning
+npm run deploy:dev -- --context mediamtxImageTag=v1.5.0-custom
+```
+
+#### **MediaMTX Application Configuration**
+```bash
+# Version management
+npm run deploy:prod -- --context mediamtxVersion=v1.5.0 --context buildRevision=2
+```
 
 ### **Multiple Parameter Overrides**
 ```bash
-# Combine multiple overrides
+# Combine multiple overrides for comprehensive customization
 npm run deploy:dev -- \
   --context enableInsecurePorts=true \
-  --context usePreBuiltImages=true
+  --context taskCpu=1024 \
+  --context taskMemory=2048 \
+  --context desiredCount=2 \
+  --context enableDetailedLogging=true
 ```
 
 ---
@@ -230,6 +264,27 @@ npx cdk synth --context environment=dev-test > template.yaml
 # Check parameter resolution
 grep -A 10 -B 10 "enableInsecurePorts" template.yaml
 ```
+
+---
+
+## **🛠️ CDK Utilities**
+
+The MediaInfra CDK includes several utility modules that enhance configuration management:
+
+### **Context Override System (`lib/utils/context-overrides.ts`)**
+- Enables command-line parameter overrides for all configuration values
+- Handles type conversion (string to number/boolean) from CLI inputs
+- Maintains configuration hierarchy with base config + overrides
+
+### **Constants (`lib/utils/constants.ts`)**
+- Centralized MediaMTX streaming protocol ports
+- Infrastructure constants (EFS ports, AWS regions)
+- Type-safe constant definitions
+
+### **Tag Helpers (`lib/utils/tag-helpers.ts`)**
+- Standardized resource tagging across all MediaInfra resources
+- Environment-aware tag generation
+- Consistent project identification tags
 
 ---
 

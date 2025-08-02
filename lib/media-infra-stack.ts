@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { StackProps, Fn } from 'aws-cdk-lib';
+import { StackProps, Fn, Token } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
@@ -13,10 +13,12 @@ import { MediaSecurityGroups } from './constructs/media-security-groups';
 import { MediaNlb } from './constructs/media-nlb';
 import { MediaEcsService } from './constructs/media-ecs-service';
 import { MediaEfs } from './constructs/media-efs';
+import { MEDIAMTX_PORTS } from './utils/constants';
 
 // Utility imports
 import { registerOutputs } from './outputs';
 import { ContextEnvironmentConfig } from './stack-config';
+import { validateEnvType, validateStackName, validateMediaMtxConfig } from './utils/validation';
 import { 
   createBaseImportValue, 
   createAuthImportValue, 
@@ -27,6 +29,7 @@ import {
   TAK_EXPORT_NAMES,
   CLOUDTAK_EXPORT_NAMES
 } from './cloudformation-imports';
+import type { InfrastructureConfig, NetworkConfig, SecretsConfig, StorageConfig } from './construct-configs';
 
 export interface MediaInfraStackProps extends StackProps {
   environment: 'prod' | 'dev-test';
@@ -43,19 +46,39 @@ export class MediaInfraStack extends cdk.Stack {
       description: 'TAK Media Layer - MediaMTX Streaming Server with NLB',
     });
 
+    // Validate configuration early
+    validateEnvType(props.environment);
+    validateStackName(props.envConfig.stackName);
+    validateMediaMtxConfig(props.envConfig);
+
+    // Use environment configuration directly
     const { envConfig } = props;
+    
+    // Extract configuration values directly from envConfig
     const stackNameComponent = envConfig.stackName;
+    
+    const isHighAvailability = props.environment === 'prod';
+    const environmentLabel = props.environment === 'prod' ? 'Prod' : 'Dev-Test';
+    const resolvedStackName = id;
+    const enableDetailedLogging = envConfig.general.enableDetailedLogging;
+
+    // Get runtime CloudFormation values
+    const stackName = Fn.ref('AWS::StackName');
+    const region = cdk.Stack.of(this).region;
+
+    // Configuration-based parameter resolution
+    const mediaMtxVersion = envConfig.mediamtx?.version || '1.13.1';
+    const enableInsecurePorts = envConfig.enableInsecurePorts;
+    const usePreBuiltImages = envConfig.usePreBuiltImages;
 
     // =================
     // IMPORT BASE INFRASTRUCTURE RESOURCES
     // =================
 
     // Import VPC and networking from base infrastructure
-    const vpcAvailabilityZones = this.availabilityZones.slice(0, 2);
-    
     const vpc = ec2.Vpc.fromVpcAttributes(this, 'VPC', {
       vpcId: Fn.importValue(createBaseImportValue(stackNameComponent, BASE_EXPORT_NAMES.VPC_ID)),
-      availabilityZones: vpcAvailabilityZones,
+      availabilityZones: [region + 'a', region + 'b'],
       publicSubnetIds: [
         Fn.importValue(createBaseImportValue(stackNameComponent, BASE_EXPORT_NAMES.SUBNET_PUBLIC_A)),
         Fn.importValue(createBaseImportValue(stackNameComponent, BASE_EXPORT_NAMES.SUBNET_PUBLIC_B))
@@ -112,6 +135,21 @@ export class MediaInfraStack extends cdk.Stack {
     const cloudTakUrl = Fn.importValue(createCloudTakImportValue(stackNameComponent, CLOUDTAK_EXPORT_NAMES.SERVICE_URL));
 
     // =================
+    // CONTAINER IMAGE STRATEGY
+    // =================
+
+    // Determine container image strategy
+    let containerImageUri: string | undefined;
+    if (usePreBuiltImages) {
+      const mediamtxImageTag = this.node.tryGetContext('mediamtxImageTag') ?? envConfig.docker?.mediamtxImageTag ?? 'latest';
+      // Get ECR repository ARN from BaseInfra and extract repository name
+      const ecrRepoArn = Fn.importValue(createBaseImportValue(stackNameComponent, BASE_EXPORT_NAMES.ECR_REPO));
+      // Extract repository name from ARN (format: arn:aws:ecr:region:account:repository/name)
+      const ecrRepoName = Fn.select(1, Fn.split('/', ecrRepoArn));
+      containerImageUri = `${this.account}.dkr.ecr.${this.region}.amazonaws.com/${cdk.Token.asString(ecrRepoName)}:${mediamtxImageTag}`;
+    }
+
+    // =================
     // EXTRACT MEDIA HOSTNAME FROM CLOUDTAK EXPORT
     // =================
 
@@ -126,7 +164,7 @@ export class MediaInfraStack extends cdk.Stack {
     const securityGroups = new MediaSecurityGroups(this, 'SecurityGroups', {
       vpc,
       stackNameComponent,
-      enableInsecurePorts: envConfig.enableInsecurePorts,
+      enableInsecurePorts: enableInsecurePorts,
     });
 
     // =================
@@ -150,9 +188,48 @@ export class MediaInfraStack extends cdk.Stack {
       hostedZone,
       mediaHostname,
       stackNameComponent,
-      enableInsecurePorts: envConfig.enableInsecurePorts,
+      enableInsecurePorts: enableInsecurePorts,
       nlbSecurityGroup: securityGroups.nlb,
     });
+
+    // =================
+    // STRUCTURED CONFIGURATION OBJECTS
+    // =================
+
+    // Infrastructure configuration
+    const infrastructure: InfrastructureConfig = {
+      vpc,
+      ecsCluster,
+      kmsKey,
+      securityGroups: {
+        mediaMtx: securityGroups.mediaMtx,
+        nlb: securityGroups.nlb,
+        efs: securityGroups.efs
+      }
+    };
+
+    // Network configuration
+    const network: NetworkConfig = {
+      hostedZone,
+      certificate,
+      mediaHostname,
+      hostedZoneName
+    };
+
+    // Secrets configuration
+    const secrets: SecretsConfig = {
+      signingSecret,
+      mediaSecret,
+      cloudTakUrl
+    };
+
+    // Storage configuration
+    const storage: StorageConfig = {
+      efs: {
+        fileSystemId: mediaEfs.fileSystem.fileSystemId,
+        accessPointId: mediaEfs.accessPoint.accessPointId
+      }
+    };
 
     // =================
     // CREATE MEDIAMTX ECS SERVICE
@@ -161,29 +238,52 @@ export class MediaInfraStack extends cdk.Stack {
     const mediaService = new MediaEcsService(this, 'MediaEcsService', {
       environment: props.environment,
       envConfig,
-      vpc,
-      ecsCluster,
-      securityGroup: securityGroups.mediaMtx,
+      infrastructure,
+      network,
+      secrets,
+      storage,
       targetGroups: nlb.targetGroups,
-      signingSecret,
-      mediaSecret,
-      cloudTakUrl,
       stackNameComponent,
-      kmsKey,
-      efsFileSystemId: mediaEfs.fileSystem.fileSystemId,
-      efsAccessPointId: mediaEfs.accessPoint.accessPointId,
+      containerImageUri
     });
 
     // =================
     // STACK OUTPUTS
     // =================
 
-    registerOutputs({
-      stack: this,
-      stackName: this.stackName,
-      nlbDnsName: nlb.loadBalancer.loadBalancerDnsName,
-      mediaUrl: `https://${mediaHostname}.${hostedZoneName}:9997`,
-      ecsServiceArn: mediaService.service.serviceArn,
+    // MediaMTX Service URL
+    new cdk.CfnOutput(this, 'MediaUrl', {
+      value: `https://${mediaHostname}.${hostedZoneName}:${MEDIAMTX_PORTS.API_HTTPS}`,
+      description: 'MediaMTX API HTTPS URL',
+      exportName: `${resolvedStackName}-MediaUrl`
+    });
+
+    // Network Load Balancer DNS Name
+    new cdk.CfnOutput(this, 'LoadBalancerDnsName', {
+      value: nlb.loadBalancer.loadBalancerDnsName,
+      description: 'Network Load Balancer DNS Name',
+      exportName: `${resolvedStackName}-LoadBalancerDnsName`
+    });
+
+    // ECS Service ARN
+    new cdk.CfnOutput(this, 'EcsServiceArn', {
+      value: mediaService.service.serviceArn,
+      description: 'MediaMTX ECS Service ARN',
+      exportName: `${resolvedStackName}-EcsServiceArn`
+    });
+
+    // EFS File System ID
+    new cdk.CfnOutput(this, 'EfsFileSystemId', {
+      value: mediaEfs.fileSystem.fileSystemId,
+      description: 'EFS File System ID for MediaMTX configuration',
+      exportName: `${resolvedStackName}-EfsFileSystemId`
+    });
+
+    // MediaMTX hostname
+    new cdk.CfnOutput(this, 'MediaHostname', {
+      value: `${mediaHostname}.${hostedZoneName}`,
+      description: 'MediaMTX fully qualified hostname',
+      exportName: `${resolvedStackName}-MediaHostname`
     });
   }
 }

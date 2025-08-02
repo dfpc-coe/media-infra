@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
+import { MEDIAMTX_PORTS } from '../utils/constants';
 
 export interface MediaSecurityGroupsProps {
   vpc: ec2.IVpc;
@@ -41,32 +42,32 @@ export class MediaSecurityGroups extends Construct {
 
     // NLB inbound rules
     if (enableInsecurePorts) {
-      this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(1935), 'RTMP insecure');
-      this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(8554), 'RTSP insecure');
+      this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(MEDIAMTX_PORTS.RTMP), 'RTMP insecure');
+      this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(MEDIAMTX_PORTS.RTSP), 'RTSP insecure');
     }
     
-    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(1936), 'RTMPS secure');
-    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(8555), 'RTSPS secure');
-    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.udp(8890), 'SRTS');
-    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(8888), 'HLS HTTPS');
-    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(9997), 'MediaMTX API HTTPS');
+    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(MEDIAMTX_PORTS.RTMPS), 'RTMPS secure');
+    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(MEDIAMTX_PORTS.RTSPS), 'RTSPS secure');
+    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.udp(MEDIAMTX_PORTS.SRTS), 'SRTS');
+    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(MEDIAMTX_PORTS.HLS_HTTPS), 'HLS HTTPS');
+    this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(MEDIAMTX_PORTS.API_HTTPS), 'MediaMTX API HTTPS');
     this.nlb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(9996), 'MediaMTX Playback HTTPS');
 
     // MediaMTX inbound rules from NLB
-    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(1935), 'RTMP from NLB');
-    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(8554), 'RTSP from NLB');
-    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.udp(8890), 'SRTS from NLB');
-    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(8888), 'HLS from NLB');
-    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(9997), 'API from NLB');
+    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(MEDIAMTX_PORTS.RTMP), 'RTMP from NLB');
+    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(MEDIAMTX_PORTS.RTSP), 'RTSP from NLB');
+    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.udp(MEDIAMTX_PORTS.SRTS), 'SRTS from NLB');
+    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(MEDIAMTX_PORTS.HLS_HTTPS), 'HLS from NLB');
+    this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(MEDIAMTX_PORTS.API_HTTPS), 'API from NLB');
     this.mediaMtx.addIngressRule(ec2.Peer.securityGroupId(this.nlb.securityGroupId), ec2.Port.tcp(9996), 'Playback from NLB');
 
     // NLB outbound rules for health checks
-    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(9997), 'Health check to VPC API');
+    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(MEDIAMTX_PORTS.API_HTTPS), 'Health check to VPC API');
     this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(9996), 'Health check to VPC Playback');
-    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(1935), 'Health check to VPC RTMP');
-    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(8554), 'Health check to VPC RTSP');
-    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.udp(8890), 'Health check to VPC SRTS');
-    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(8888), 'Health check to VPC HLS');
+    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(MEDIAMTX_PORTS.RTMP), 'Health check to VPC RTMP');
+    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(MEDIAMTX_PORTS.RTSP), 'Health check to VPC RTSP');
+    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.udp(MEDIAMTX_PORTS.SRTS), 'Health check to VPC SRTS');
+    this.nlb.addEgressRule(ec2.Peer.ipv4(props.vpc.vpcCidrBlock), ec2.Port.tcp(MEDIAMTX_PORTS.HLS_HTTPS), 'Health check to VPC HLS');
 
     // EFS inbound rules from MediaMTX
     this.efs.addIngressRule(ec2.Peer.securityGroupId(this.mediaMtx.securityGroupId), ec2.Port.tcp(2049), 'NFS from MediaMTX');
