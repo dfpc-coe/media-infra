@@ -66,26 +66,21 @@ export class MediaEcsService extends Construct {
       ]
     }));
 
+    // Create execution role (following tak-infra pattern)
+    const executionRole = new iam.Role(this, 'MediaMtxExecutionRole', {
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
+      ]
+    });
+
     // Create task definition
     this.taskDefinition = new ecs.FargateTaskDefinition(this, 'MediaMtxTaskDef', {
       memoryLimitMiB: props.envConfig.ecs.taskMemory,
       cpu: props.envConfig.ecs.taskCpu,
       taskRole: taskRole,
+      executionRole: executionRole,
     });
-
-    // Add ECR permissions to execution role for image pulling
-    if (this.taskDefinition.executionRole) {
-      (this.taskDefinition.executionRole as iam.Role).addToPolicy(new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: [
-          'ecr:GetAuthorizationToken',
-          'ecr:BatchCheckLayerAvailability',
-          'ecr:GetDownloadUrlForLayer',
-          'ecr:BatchGetImage'
-        ],
-        resources: ['*']
-      }));
-    }
 
     // Add EFS volume
     this.taskDefinition.addVolume({
@@ -182,9 +177,7 @@ export class MediaEcsService extends Construct {
 
     // Grant KMS permissions for secrets decryption (following TAK infrastructure pattern)
     props.infrastructure.kmsKey.grantDecrypt(this.taskDefinition.taskRole);
-    if (this.taskDefinition.executionRole) {
-      props.infrastructure.kmsKey.grantDecrypt(this.taskDefinition.executionRole);
-    }
+    props.infrastructure.kmsKey.grantDecrypt(executionRole);
 
     // Add ECS Exec permissions if enabled
     if (props.envConfig.ecs.enableEcsExec) {

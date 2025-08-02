@@ -38,6 +38,9 @@ jest.mock('aws-cdk-lib/aws-iam', () => ({
     addActions: jest.fn(),
     addResources: jest.fn()
   })),
+  ManagedPolicy: {
+    fromAwsManagedPolicyName: jest.fn().mockReturnValue({})
+  },
   Effect: { ALLOW: 'Allow' }
 }));
 
