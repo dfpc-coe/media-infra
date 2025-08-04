@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.2.0 - 2025-08-04
+
+- :arrow_up: Update `mediamtx@1.13.1`
+
 ### v4.1.0 - 2025-07-07
 
 - :arrow_up: Update `mediamtx@1.13.0`
