@@ -35,6 +35,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 let syncInProgress = false;
 const CLEANUP_GRACE_PERIOD = 5 * 60 * 1000; // 5 minutes
+const cleanupTracker = new Map<string, number>(); // Track cleanup timing separately
 
 export async function schedule() {
     // Add new paths every 10 seconds (avoid race with CloudTAK API calls)
@@ -74,19 +75,20 @@ export async function schedule() {
             const remotePaths = new Set(newPaths.map(p => p.path));
             const now = Date.now();
             
-            for (const [pathName, pathConfig] of Object.entries(currentConfig.paths)) {
+            for (const pathName of Object.keys(currentConfig.paths)) {
                 if (!remotePaths.has(pathName)) {
                     // Track when path was first marked for cleanup
-                    if (!pathConfig.cleanupMarkedAt) {
-                        pathConfig.cleanupMarkedAt = now;
-                    } else if (now - pathConfig.cleanupMarkedAt > CLEANUP_GRACE_PERIOD) {
+                    if (!cleanupTracker.has(pathName)) {
+                        cleanupTracker.set(pathName, now);
+                    } else if (now - cleanupTracker.get(pathName)! > CLEANUP_GRACE_PERIOD) {
                         delete currentConfig.paths[pathName];
+                        cleanupTracker.delete(pathName);
                         pathsRemoved = true;
                         console.error(`Removed stale path: ${pathName}`);
                     }
                 } else {
                     // Path exists in CloudTAK - clear cleanup marker
-                    delete pathConfig.cleanupMarkedAt;
+                    cleanupTracker.delete(pathName);
                 }
             }
             
