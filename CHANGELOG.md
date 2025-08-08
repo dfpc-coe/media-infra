@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.3.0 - 2025-08-08
+
+- :rocket: Use `runOnDemand` with `ffmpeg` for more reliable external stream ingestion
+
 ### v4.2.0 - 2025-08-04
 
 - :arrow_up: Update `mediamtx@1.13.1`
