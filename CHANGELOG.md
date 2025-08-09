@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.5.0 - 2025-08-09
+
+- :rocket: Change to RunOnInit
+
 ### v4.4.0 - 2025-08-09
 
 - :rocket: Allow overriding Health Check Ports/Protocols
