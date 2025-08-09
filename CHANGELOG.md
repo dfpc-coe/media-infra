@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v4.4.0 - 2025-08-09
+
+- :rocket: Allow overriding Health Check Ports/Protocols
+
 ### v4.3.0 - 2025-08-08
 
 - :rocket: Use `runOnDemand` with `ffmpeg` for more reliable external stream ingestion

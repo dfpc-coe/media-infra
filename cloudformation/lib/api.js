@@ -6,7 +6,7 @@ const PORTS = [{
     Protocol: 'tcp',
     Description: 'API Access - HTTP',
     Certificate: true,
-    Enabled: true
+    Enabled: true,
 },{
     Name: 'Playback',
     Port: 9996,
@@ -62,7 +62,11 @@ const PORTS = [{
     Protocol: 'udp',
     Description: 'SRT Protocol',
     Certificate: false,
-    Enabled: true
+    Enabled: true,
+
+    // UDP Health checks fallback to TCP
+    HealthCheckPort: 9997,
+    HealthCheckProtocol: 'tcp'
 }].filter((p) => {
     return p.Enabled;
 });
@@ -396,9 +400,10 @@ for (const p of PORTS) {
 
             HealthCheckEnabled: true,
             HealthCheckIntervalSeconds: 30,
+
             // UDP Health checks fallback to TCP
-            HealthCheckPort: p.Protocol.toUpperCase() === 'UDP' ? '9997' : p.Port,
-            HealthCheckProtocol: p.Protocol.toUpperCase() === 'UDP' ? 'TCP' : p.Protocol.toUpperCase(),
+            HealthCheckPort: p.HealthCheckPort || p.Port,
+            HealthCheckProtocol: (p.HealthCheckProtocol || p.Protocol).toUpperCase(),
             HealthCheckTimeoutSeconds: 10,
             HealthyThresholdCount: 5
         }
