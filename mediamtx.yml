@@ -1,17 +1,15 @@
-# This Config file is reduced to the min required use case for COTAK
+# This Config file is reduced to the min required use case for CloudTAK
 # View: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
 # For full MediaMTX Config Options
 
 logLevel: info
 logDestinations: [stdout]
 
-readTimeout: 10s
-writeTimeout: 10s
-writeQueueSize: 512
-udpMaxPayloadSize: 1472
+readTimeout: 30s
+writeTimeout: 30s
 
 authMethod: http
-authHTTPAddress: http://example.com
+authHTTPAddress: CLOUDTAK_URL/video/auth
 authHTTPExclude: []
 
 api: yes

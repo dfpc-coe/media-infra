@@ -23,98 +23,66 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    // Ensure if there is a config change it is immediately applied
-    const currentConfig = YAML.parse(String(fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
-    writeConfig(defaultConfig(currentConfig));
+    // Ensure Config is written before starting the service
+    await sync();
 
     await schedule();
 }
 
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        const newConfig = YAML.parse(defaultConfig(await persist()));
-        const oldConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
+        await this.sync();
+    });
+}
 
-        try {
-            assert.deepEqual(oldConfig, newConfig);
-            console.error('ok - no difference in config');
-        } catch (err) {
-            if (err instanceof assert.AssertionError) {
-                console.error('DIFF:', diffString(oldConfig, newConfig));
+/**
+ * Perform a single sync operation
+ */
+export async function sync() {
+    await this.syncPaths();
+}
 
-                writeConfig(defaultConfig(newConfig));
-            } else {
-                throw err;
+/**
+ * Sync Paths from CloudTAK to Media Server
+ */
+export async function syncPaths(): Promise<Array<RemotePath>> {
+    const paths = await this.listCloudTAKPaths();
+
+}
+
+export async listMediaMTXPaths(): Promise<> {
+    let total = 0;
+    const limit = 100;
+    let page = 0;
+
+    const paths = [];
+
+    do {
+        const url = new URL('http://localhost:9997/v3/config/paths/list');
+        url.searchParams.append('itemsPerPage', String(limit));
+        url.searchParams.append('page', String(page));
+
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                // @ts-expect-error JWT Secret
+                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`
             }
-        }
-    });
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+
+        const body = await res.json() as RemotePaths;
+
+        total = body.itemCount;
+
+        paths.push(...body.items);
+
+        ++page;
+    } while (total > page * limit);
 }
 
-export function defaultConfig(config: Record<string, any>): string {
-    config.authMethod = 'http';
-    config.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
-    config.authHTTPExclude = [];
-    config.authInternalUsers = [];
-
-    config.readTimeout = '30s';
-    config.writeTimeout = '30s';
-
-    let configstr = YAML.stringify(config, (key, value) => {
-        if (typeof value === 'boolean') {
-            return value === true ? 'yes' : 'no';
-        } else {
-            return value;
-        }
-    });
-
-    // This is janky but MediaMTX wants `no` as a string and not a boolean
-    // and I can't get the YAML library to respect that...
-    configstr = configstr.split('\n').map((line) => {
-        line = line.replace(/^encryption: no/, 'encryption: "no"');
-        line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
-        line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
-        return line;
-    }).join('\n');
-
-    return configstr;
-}
-
-export function writeConfig(config: string): void {
-    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', config);
-
-    // Ref: https://github.com/bluenviron/mediamtx/issues/937
-    fs.renameSync(
-        '/opt/mediamtx/mediamtx.yml.new',
-        '/opt/mediamtx/mediamtx.yml'
-    );
-}
-
-export default async function persist(): Promise<Record<string, any>> {
-    const base = await globalConfig();
-
-    const paths = (await globalPaths()).map((remote: RemotePath) => {
-        if (remote.proxy) {
-            return {
-                name: remote.path,
-                runOnInit: `ffmpeg -re -i '${remote.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${remote.path}`
-            };
-        } else {
-            return {
-                name: remote.path
-            };
-        }
-    });
-
-    base.paths = {};
-
-    for (const path of paths) {
-        base.paths[path.name] = path;
-    }
-
-    return base;
-}
-
-export async function globalPaths(): Promise<Array<RemotePath>> {
+export async listCloudTAKPaths(): Promise<Array<RemotePath>> {
     let total = 0;
     const limit = 100;
     let page = 0;
@@ -147,23 +115,4 @@ export async function globalPaths(): Promise<Array<RemotePath>> {
 
         ++page;
     } while (total > page * limit);
-
-    return paths;
-}
-
-export async function globalConfig(): Promise<any> {
-    const res = await fetch('http://localhost:9997/v3/config/global/get', {
-        method: 'GET',
-        headers: {
-            Authorization: `Basic ${Buffer.from(`management:${process.env.MediaSecret}`).toString('base64')}`
-        }
-    });
-
-    if (!res.ok) {
-        throw new Error('Status: ' + res.status + ' Body: ' + await res.text());
-    }
-
-    const body = await res.json();
-
-    return body;
 }

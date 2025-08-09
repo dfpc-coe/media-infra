@@ -5,22 +5,8 @@
 
 set -euo pipefail
 
-# Primarily used for testing, production mounts this via EFS
-if [ ! -d "/opt/mediamtx" ]; then
-    echo "Creating /opt/mediamtx"
-    mkdir "/opt/mediamtx"
-fi
-
-echo "Contents:"
-ls /opt/mediamtx/
-
-# Copy EFS Persisted certs MediaMTX root
-cp "/mediamtx.base.yml" "/opt/mediamtx/mediamtx.yml"
-
-if [[ ! -f /mediamtx.yml ]]; then
-    rm /mediamtx.yml
-fi
+sed -i "s|CLOUDTAK_URL|${CLOUDTAK_URL}|g" ./mediamtx.base.yml
 
 npx tsx persist.ts &
 
-/mediamtx /opt/mediamtx/mediamtx.yml
+/mediamtx ./mediamtx.base.yml
