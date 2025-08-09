@@ -5,8 +5,8 @@
 
 set -euo pipefail
 
-sed -i "s|CLOUDTAK_URL|${CLOUDTAK_URL}|g" ./mediamtx.base.yml
+sed -i "s|CLOUDTAK_URL|${CLOUDTAK_URL}|g" /mediamtx.yml
 
 npx tsx persist.ts &
 
-/mediamtx ./mediamtx.base.yml
+/mediamtx /mediamtx.yml

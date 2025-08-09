@@ -2,7 +2,7 @@ FROM bluenviron/mediamtx:1.13.1-ffmpeg
 
 RUN apk add bash vim yq nodejs npm
 
-ADD mediamtx.yml /mediamtx.base.yml
+ADD mediamtx.yml /
 ADD start /
 
 ADD package.json /
