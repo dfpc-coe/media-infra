@@ -7,13 +7,23 @@ import fsp from 'node:fs/promises';
 import cron from 'node-cron';
 import YAML from 'yaml';
 
-export type RemotePath = {
+export type Path = {
+    name: string,
+
+    runOnInit: string,
+    runOnInitRestart: boolean
+
+    record: boolean,
+};
+
+export type CloudTAKRemotePath = {
     id: number,
     path: string,
+    recording: boolean,
     proxy: string | null,
 }
 
-export type RemotePaths = {
+export type CloudTAKRemotePaths = {
     total: number,
     items: Array<RemotePath>
 }
@@ -45,17 +55,83 @@ export async function sync() {
 /**
  * Sync Paths from CloudTAK to Media Server
  */
-export async function syncPaths(): Promise<Array<RemotePath>> {
+export async function syncPaths(): Promise<void> {
     const paths = await this.listCloudTAKPaths();
 
+    const existing = await this.listMediaMTXPathsMap();
+
+    for (const path of paths) {
+        const exists = existing.get(path.path);
+
+        const payload = this.payload(path);
+
+        if (!exists) {
+            await this.createMediaMTXPath(payload);
+        } else {
+            if (
+                exists.recording !== payload.recording
+                || exists.runOnInit !== payload.runOnInit
+            ) {
+                await this.updateMediaMTXPath(payload);
+            }
+        }
+    }
 }
 
-export async listMediaMTXPaths(): Promise<> {
+export function payload(path: CloudTAKRemotePath): Promise<Path> {
+    if (path.proxy) {
+        return {
+            name: remote.path,
+            record: path.recording,
+            runOnInit: `ffmpeg -re -i '${remote.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${remote.path}`
+        };
+    } else {
+        return {
+            name: remote.path,
+            record: path.recording,
+            runOnInit: ''
+        };
+    }
+}
+
+export async function createMediaMTXPath(path: Path): Promise<void> {
+    const url = new URL(`http://localhost:9997/v3/config/paths/add/${path.name}`);
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            // @ts-expect-error JWT Secret
+            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(path)
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+}
+
+export async function updateMediaMTXPath(path: Path): Promise<void> {
+    const url = new URL(`http://localhost:9997/v3/config/paths/replace/${path.name}`);
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            // @ts-expect-error JWT Secret
+            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(path)
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+}
+
+export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
     let total = 0;
     const limit = 100;
     let page = 0;
 
-    const paths = [];
+    const paths = new Map<string, Path>();
 
     do {
         const url = new URL('http://localhost:9997/v3/config/paths/list');
@@ -72,17 +148,23 @@ export async listMediaMTXPaths(): Promise<> {
 
         if (!res.ok) throw new Error(await res.text());
 
-        const body = await res.json() as RemotePaths;
+        const body = await res.json() as {
+            pageCount: number,
+            itemCount: number,
+            items: Array<Path>
+        };
 
         total = body.itemCount;
 
-        paths.push(...body.items);
+        for (const item of body.items) {
+            paths.set(item.name, item);
+        }
 
         ++page;
     } while (total > page * limit);
 }
 
-export async listCloudTAKPaths(): Promise<Array<RemotePath>> {
+export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
     let total = 0;
     const limit = 100;
     let page = 0;
@@ -107,7 +189,7 @@ export async listCloudTAKPaths(): Promise<Array<RemotePath>> {
 
         if (!res.ok) throw new Error(await res.text());
 
-        const body = await res.json() as RemotePaths;
+        const body = await res.json() as CloudTAKRemotePaths;
 
         total = body.total;
 
