@@ -22,16 +22,13 @@
     },
     "homepage": "https://github.com/tak-ps/auth-infra#readme",
     "dependencies": {
-        "@aws-sdk/client-secrets-manager": "^3.787.0",
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",
-        "json-diff": "^1.0.6",
         "jsonwebtoken": "^9.0.2",
         "node-cron": "^4.0.0",
         "tsx": "^4.19.2",
-        "undici": "^7.8.0",
-        "yaml": "^2.6.0"
+        "undici": "^7.8.0"
     },
     "devDependencies": {
         "@types/json-diff": "^1.0.3",
