@@ -4,10 +4,7 @@ import cron from 'node-cron';
 
 export type Path = {
     name: string,
-
     runOnInit: string,
-    runOnInitRestart: boolean
-
     record: boolean,
 };
 
@@ -20,7 +17,7 @@ export type CloudTAKRemotePath = {
 
 export type CloudTAKRemotePaths = {
     total: number,
-    items: Array<RemotePath>
+    items: Array<CloudTAKRemotePath>
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -36,7 +33,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        await this.sync();
+        await sync();
     });
 }
 
@@ -44,45 +41,45 @@ export async function schedule() {
  * Perform a single sync operation
  */
 export async function sync() {
-    await this.syncPaths();
+    await syncPaths();
 }
 
 /**
  * Sync Paths from CloudTAK to Media Server
  */
 export async function syncPaths(): Promise<void> {
-    const paths = await this.listCloudTAKPaths();
+    const paths = await listCloudTAKPaths();
 
-    const existing = await this.listMediaMTXPathsMap();
+    const existing = await listMediaMTXPathsMap();
 
     for (const path of paths) {
         const exists = existing.get(path.path);
 
-        const payload = this.payload(path);
+        const payload = createPayload(path);
 
         if (!exists) {
-            await this.createMediaMTXPath(payload);
+            await createMediaMTXPath(payload);
         } else {
             if (
-                exists.recording !== payload.recording
+                exists.record !== payload.record
                 || exists.runOnInit !== payload.runOnInit
             ) {
-                await this.updateMediaMTXPath(payload);
+                await updateMediaMTXPath(payload);
             }
         }
     }
 }
 
-export function payload(path: CloudTAKRemotePath): Promise<Path> {
+export function createPayload(path: CloudTAKRemotePath): Path {
     if (path.proxy) {
         return {
-            name: remote.path,
+            name: path.path,
             record: path.recording,
-            runOnInit: `ffmpeg -re -i '${remote.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${remote.path}`
+            runOnInit: `ffmpeg -re -i '${path.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${path.path}`
         };
     } else {
         return {
-            name: remote.path,
+            name: path.path,
             record: path.recording,
             runOnInit: ''
         };
@@ -157,6 +154,8 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
 
         ++page;
     } while (total > page * limit);
+
+    return paths;
 }
 
 export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
@@ -192,4 +191,6 @@ export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
 
         ++page;
     } while (total > page * limit);
+
+    return paths;
 }
