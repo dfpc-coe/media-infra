@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-yq -i -y ".authHTTPAddress = \"$CLOUDTAK_URL/video/auth\"" /mediamtx.yml
+yq -i ".authHTTPAddress = \"$CLOUDTAK_URL/video/auth\"" /mediamtx.yml
 
 npx tsx persist.ts &
 
