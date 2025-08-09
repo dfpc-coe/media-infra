@@ -92,8 +92,7 @@ export async function createMediaMTXPath(path: Path): Promise<void> {
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            // @ts-expect-error JWT Secret
-            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`,
+            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(path)
@@ -108,8 +107,7 @@ export async function updateMediaMTXPath(path: Path): Promise<void> {
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            // @ts-expect-error JWT Secret
-            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`,
+            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(path)
