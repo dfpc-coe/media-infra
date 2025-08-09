@@ -6,7 +6,7 @@ const PORTS = [{
     Protocol: 'tcp',
     Description: 'API Access - HTTP',
     Certificate: true,
-    Enabled: true,
+    Enabled: true
 },{
     Name: 'Playback',
     Port: 9996,
