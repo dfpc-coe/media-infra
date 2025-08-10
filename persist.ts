@@ -131,7 +131,7 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`,
+                'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`
             }
         });
 
