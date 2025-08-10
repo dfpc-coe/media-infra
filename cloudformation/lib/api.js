@@ -185,11 +185,11 @@ const Resources = {
                 }),
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
+                    { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
                     { Name: 'Environment', Value: cf.ref('Environment') },
                     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
                     { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/media:SecretString::AWSCURRENT}}') },
                     { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
-                    { Name: 'FORCE_NEW_CONFIG', Value: cf.ref('ForceNewConfig') },
                     { Name: 'AWS_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {
@@ -416,14 +416,14 @@ export default cf.merge({
             Description: 'Prefix of domain: ie "video" of video.example.com',
             Type: 'String'
         },
+        LogLevel: {
+            Description: 'Log Level for MediaMTX',
+            Type: 'String',
+            AllowedValues: ['debug', 'info', 'warn', 'error'],
+            Default: 'warn'
+        },
         EnableExecute: {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
-            Type: 'String',
-            AllowedValues: ['true', 'false'],
-            Default: 'false'
-        },
-        ForceNewConfig: {
-            Description: 'Force a blank config file - permanently deleting current config',
             Type: 'String',
             AllowedValues: ['true', 'false'],
             Default: 'false'

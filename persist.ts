@@ -1,21 +1,23 @@
-import assert from 'node:assert';
 import jwt from 'jsonwebtoken';
-import { diffString }  from 'json-diff';
 import { fetch } from 'undici';
-import fs from 'node:fs';
-import fsp from 'node:fs/promises';
 import cron from 'node-cron';
-import YAML from 'yaml';
 
-export type RemotePath = {
+export type Path = {
+    name: string,
+    runOnInit: string,
+    record: boolean,
+};
+
+export type CloudTAKRemotePath = {
     id: number,
     path: string,
+    recording: boolean,
     proxy: string | null,
 }
 
-export type RemotePaths = {
+export type CloudTAKRemotePaths = {
     total: number,
-    items: Array<RemotePath>
+    items: Array<CloudTAKRemotePath>
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -23,98 +25,140 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    // Ensure if there is a config change it is immediately applied
-    const currentConfig = YAML.parse(String(fs.readFileSync('/opt/mediamtx/mediamtx.yml')));
-    writeConfig(defaultConfig(currentConfig));
+    // Ensure Config is written before starting the service
+    await sync();
 
     await schedule();
 }
 
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        const newConfig = YAML.parse(defaultConfig(await persist()));
-        const oldConfig = YAML.parse(String(await fsp.readFile('/opt/mediamtx/mediamtx.yml')));
-
-        try {
-            assert.deepEqual(oldConfig, newConfig);
-            console.error('ok - no difference in config');
-        } catch (err) {
-            if (err instanceof assert.AssertionError) {
-                console.error('DIFF:', diffString(oldConfig, newConfig));
-
-                writeConfig(defaultConfig(newConfig));
-            } else {
-                throw err;
-            }
-        }
+        await sync();
     });
 }
 
-export function defaultConfig(config: Record<string, any>): string {
-    config.authMethod = 'http';
-    config.authHTTPAddress = process.env.CLOUDTAK_URL + '/video/auth';
-    config.authHTTPExclude = [];
-    config.authInternalUsers = [];
-
-    config.readTimeout = '30s';
-    config.writeTimeout = '30s';
-
-    let configstr = YAML.stringify(config, (key, value) => {
-        if (typeof value === 'boolean') {
-            return value === true ? 'yes' : 'no';
-        } else {
-            return value;
-        }
-    });
-
-    // This is janky but MediaMTX wants `no` as a string and not a boolean
-    // and I can't get the YAML library to respect that...
-    configstr = configstr.split('\n').map((line) => {
-        line = line.replace(/^encryption: no/, 'encryption: "no"');
-        line = line.replace(/^rtmpEncryption: no/, 'rtmpEncryption: "no"');
-        line = line.replace(/^rtspEncryption: no/, 'rtspEncryption: "no"');
-        return line;
-    }).join('\n');
-
-    return configstr;
+/**
+ * Perform a single sync operation
+ */
+export async function sync() {
+    await syncPaths();
 }
 
-export function writeConfig(config: string): void {
-    fs.writeFileSync('/opt/mediamtx/mediamtx.yml.new', config);
+/**
+ * Sync Paths from CloudTAK to Media Server
+ */
+export async function syncPaths(): Promise<void> {
+    const paths = await listCloudTAKPaths();
 
-    // Ref: https://github.com/bluenviron/mediamtx/issues/937
-    fs.renameSync(
-        '/opt/mediamtx/mediamtx.yml.new',
-        '/opt/mediamtx/mediamtx.yml'
-    );
-}
-
-export default async function persist(): Promise<Record<string, any>> {
-    const base = await globalConfig();
-
-    const paths = (await globalPaths()).map((remote: RemotePath) => {
-        if (remote.proxy) {
-            return {
-                name: remote.path,
-                runOnInit: `ffmpeg -re -i '${remote.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${remote.path}`
-            };
-        } else {
-            return {
-                name: remote.path
-            };
-        }
-    });
-
-    base.paths = {};
+    const existing = await listMediaMTXPathsMap();
 
     for (const path of paths) {
-        base.paths[path.name] = path;
-    }
+        const exists = existing.get(path.path);
 
-    return base;
+        const payload = createPayload(path);
+
+        if (!exists) {
+            await createMediaMTXPath(payload);
+        } else {
+            if (
+                exists.record !== payload.record
+                || exists.runOnInit !== payload.runOnInit
+            ) {
+                await updateMediaMTXPath(payload);
+            }
+        }
+    }
 }
 
-export async function globalPaths(): Promise<Array<RemotePath>> {
+export function createPayload(path: CloudTAKRemotePath): Path {
+    if (path.proxy) {
+        return {
+            name: path.path,
+            record: path.recording,
+            runOnInit: `ffmpeg -re -i '${path.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${path.path}`
+        };
+    } else {
+        return {
+            name: path.path,
+            record: path.recording,
+            runOnInit: ''
+        };
+    }
+}
+
+export async function createMediaMTXPath(path: Path): Promise<void> {
+    const url = new URL(`http://localhost:9997/v3/config/paths/add/${path.name}`);
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(path)
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+}
+
+export async function updateMediaMTXPath(path: Path): Promise<void> {
+    const url = new URL(`http://localhost:9997/v3/config/paths/replace/${path.name}`);
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(path)
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+}
+
+export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
+    let total = 0;
+    const limit = 100;
+    let page = 0;
+
+    const paths = new Map<string, Path>();
+
+    do {
+        const url = new URL('http://localhost:9997/v3/config/paths/list');
+        url.searchParams.append('itemsPerPage', String(limit));
+        url.searchParams.append('page', String(page));
+
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`
+            }
+        });
+
+        if (!res.ok) {
+            console.error(res);
+            throw new Error(await res.text());
+        }
+
+        const body = await res.json() as {
+            pageCount: number,
+            itemCount: number,
+            items: Array<Path>
+        };
+
+        total = body.itemCount;
+
+        for (const item of body.items) {
+            paths.set(item.name, item);
+        }
+
+        ++page;
+    } while (total > page * limit);
+
+    return paths;
+}
+
+export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
     let total = 0;
     const limit = 100;
     let page = 0;
@@ -132,14 +176,13 @@ export async function globalPaths(): Promise<Array<RemotePath>> {
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                // @ts-expect-error JWT Secret
-                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`
+                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`
             }
         });
 
         if (!res.ok) throw new Error(await res.text());
 
-        const body = await res.json() as RemotePaths;
+        const body = await res.json() as CloudTAKRemotePaths;
 
         total = body.total;
 
@@ -149,21 +192,4 @@ export async function globalPaths(): Promise<Array<RemotePath>> {
     } while (total > page * limit);
 
     return paths;
-}
-
-export async function globalConfig(): Promise<any> {
-    const res = await fetch('http://localhost:9997/v3/config/global/get', {
-        method: 'GET',
-        headers: {
-            Authorization: `Basic ${Buffer.from(`management:${process.env.MediaSecret}`).toString('base64')}`
-        }
-    });
-
-    if (!res.ok) {
-        throw new Error('Status: ' + res.status + ' Body: ' + await res.text());
-    }
-
-    const body = await res.json();
-
-    return body;
 }
