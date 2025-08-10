@@ -92,7 +92,7 @@ export async function createMediaMTXPath(path: Path): Promise<void> {
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`,
+            'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(path)
@@ -107,7 +107,7 @@ export async function updateMediaMTXPath(path: Path): Promise<void> {
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`,
+            'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(path)
@@ -131,12 +131,14 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                // @ts-expect-error JWT Secret
-                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`
+                'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`,
             }
         });
 
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+            console.error(res);
+            throw new Error(await res.text());
+        }
 
         const body = await res.json() as {
             pageCount: number,
@@ -174,8 +176,7 @@ export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                // @ts-expect-error JWT Secret
-                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, process.env.SigningSecret)}`
+                Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`
             }
         });
 

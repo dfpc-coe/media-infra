@@ -185,6 +185,7 @@ const Resources = {
                 }),
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
+                    { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
                     { Name: 'Environment', Value: cf.ref('Environment') },
                     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
                     { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/media:SecretString::AWSCURRENT}}') },
@@ -414,6 +415,12 @@ export default cf.merge({
         SubdomainPrefix: {
             Description: 'Prefix of domain: ie "video" of video.example.com',
             Type: 'String'
+        },
+        LogLevel: {
+            Description: 'Log Level for MediaMTX',
+            Type: 'String',
+            AllowedValues: ['debug', 'info', 'warn', 'error'],
+            Default: 'warn'
         },
         EnableExecute: {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',

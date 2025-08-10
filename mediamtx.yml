@@ -2,7 +2,7 @@
 # View: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
 # For full MediaMTX Config Options
 
-logLevel: info
+logLevel: debug
 logDestinations: [stdout]
 
 readTimeout: 30s
@@ -11,6 +11,7 @@ writeTimeout: 30s
 authMethod: http
 authHTTPAddress: CLOUDTAK_URL/video/auth
 authHTTPExclude: []
+authInternalUsers: []
 
 api: yes
 apiAddress: :9997
