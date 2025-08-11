@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v5.1.0 - 2025-08-10
+
+- :rocket: Support removing expired leases from the config
+
 ### v5.0.0 - 2025-08-10
 
 - :tada: Remove all on disk config in favour of API based sync with the upstream CloudTAK service
