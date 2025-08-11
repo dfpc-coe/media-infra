@@ -52,7 +52,7 @@ export async function syncPaths(): Promise<void> {
 
     const existing = await listMediaMTXPathsMap();
 
-    for (const path of paths) {
+    for (const path of paths.values()) {
         const exists = existing.get(path.path);
 
         const payload = createPayload(path);
@@ -66,6 +66,12 @@ export async function syncPaths(): Promise<void> {
             ) {
                 await updateMediaMTXPath(payload);
             }
+        }
+    }
+
+    for (const exist of existing.keys()) {
+        if (!paths.has(exist)) {
+            await removeMediaMTXPath(exist);
         }
     }
 }
@@ -84,6 +90,19 @@ export function createPayload(path: CloudTAKRemotePath): Path {
             runOnInit: ''
         };
     }
+}
+
+export async function removeMediaMTXPath(uuid: string): Promise<void> {
+    const url = new URL(`http://localhost:9997/v3/config/paths/delete/${uuid}`);
+
+    const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`
+        }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
 }
 
 export async function createMediaMTXPath(path: Path): Promise<void> {
@@ -158,12 +177,12 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
     return paths;
 }
 
-export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
+export async function listCloudTAKPaths(): Promise<Map<string, CloudTAKRemotePath>> {
     let total = 0;
     const limit = 100;
     let page = 0;
 
-    const paths = [];
+    const paths = new Map();
 
     do {
         const url = new URL(process.env.CLOUDTAK_URL + '/video/lease');
@@ -186,7 +205,9 @@ export async function listCloudTAKPaths(): Promise<Array<CloudTAKRemotePath>> {
 
         total = body.total;
 
-        paths.push(...body.items);
+        for (const item of body.items) {
+            paths.set(item.path, item);
+        }
 
         ++page;
     } while (total > page * limit);
