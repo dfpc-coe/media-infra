@@ -1,42 +1,15 @@
-#!/bin/sh
+#!/bin/bash
+#
+# Add MediaConfig File
+#
 
-# Container startup script following TAK.NZ pattern
-# This script initializes MediaMTX with dynamic configuration
+set -euo pipefail
 
-set -e
+LOGLEVEL=${LOG_LEVEL:-info}
 
-echo "Starting MediaMTX container..."
+yq -i ".authHTTPAddress = \"$CLOUDTAK_URL/api/video/auth\"" /mediamtx.yml
+yq -i ".logLevel = \"$LOGLEVEL\"" /mediamtx.yml
 
-# Validate required environment variables
-if [ -z "$CLOUDTAK_URL" ]; then
-    echo "ERROR: CLOUDTAK_URL environment variable is required"
-    exit 1
-fi
-
-if [ -z "$SigningSecret" ]; then
-    echo "ERROR: SigningSecret environment variable is required"
-    exit 1
-fi
-
-if [ -z "$MediaSecret" ]; then
-    echo "ERROR: MediaSecret environment variable is required"
-    exit 1
-fi
-
-echo "Environment variables validated"
-
-echo "Contents:"
-ls /opt/mediamtx/
-
-# Copy base configuration
-echo "Copying base MediaMTX configuration..."
-cp "/mediamtx.base.yml" "/opt/mediamtx/mediamtx.yml"
-
-# Start persist script in background
-echo "Starting configuration persistence..."
-cd /app
 npx tsx persist.ts &
 
-# Start MediaMTX with the configuration
-echo "Starting MediaMTX server..."
-exec /mediamtx /opt/mediamtx/mediamtx.yml
+/mediamtx /mediamtx.yml

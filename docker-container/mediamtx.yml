@@ -1,4 +1,4 @@
-# This Config file is reduced to the min required use case for COTAK
+# This Config file is reduced to the min required use case for TAK.NZ
 # View: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
 # For full MediaMTX Config Options
 
@@ -11,7 +11,7 @@ writeQueueSize: 1024
 udpMaxPayloadSize: 1472
 
 authMethod: http
-authHTTPAddress: http://example.com
+authHTTPAddress: CLOUDTAK_URL/api/video/auth
 authHTTPExclude: []
 
 api: yes

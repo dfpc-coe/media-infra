@@ -2,10 +2,10 @@ ARG MEDIAMTX_VERSION=1.13.1
 FROM bluenviron/mediamtx:${MEDIAMTX_VERSION}-ffmpeg
 
 # Install dependencies
-RUN apk add --no-cache tini curl nodejs npm netcat-openbsd bash
+RUN apk add --no-cache tini curl nodejs npm netcat-openbsd bash yq
 
 # Copy base configuration
-COPY docker-container/mediamtx.yml /mediamtx.base.yml
+COPY docker-container/mediamtx.yml /mediamtx.yml
 
 # Copy package files and install dependencies
 COPY docker-container/package*.json /app/
