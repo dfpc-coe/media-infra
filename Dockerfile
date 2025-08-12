@@ -1,4 +1,4 @@
-FROM bluenviron/mediamtx:1.13.1-ffmpeg
+FROM bluenviron/mediamtx:1.14.0-ffmpeg
 
 RUN apk add bash vim yq nodejs npm yq
 
