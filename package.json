@@ -1,7 +1,7 @@
 {
   "name": "@tak-nz/media-infra",
-  "version": "0.1.0",
-  "description": "Media infrastructure for TAK-NZ projects using AWS CDK",
+  "version": "1.0.0",
+  "description": "Media infrastructure for TAK-NZ project using AWS CDK",
   "private": true,
   "bin": {
     "cdk": "bin/cdk.js"
@@ -36,8 +36,8 @@
     "type": "git",
     "url": "git+https://github.com/TAK-NZ/media-infra.git"
   },
-  "author": "TAK.NZ - https://tak.nz",
-  "license": "MIT",
+  "author": "Christian Elsen <chris@elsen.nz>",
+  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/TAK-NZ/media-infra/issues"
   },
