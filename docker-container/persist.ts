@@ -4,7 +4,9 @@ import cron from 'node-cron';
 
 export type Path = {
     name: string,
-    runOnInit: string,
+    source?: string,
+    sourceOnDemand?: boolean,
+    runOnInit?: string,
     record: boolean,
 };
 
@@ -28,9 +30,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // Wait for MediaMTX to be ready
     while (true) {
         try {
-            const res = await fetch('http://localhost:9997/v3/config/global/get');
+            const res = await fetch('http://localhost:9997/v3/config/global/get', {
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${process.env.MediaSecret}`)}`
+                }
+            });
             if (res.ok) break;
-        } catch {}
+        } catch (err) {
+            // MediaMTX not ready yet
+        }
         await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
@@ -38,7 +46,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export async function schedule() {
-    cron.schedule('*/10 * * * * *', async () => {
+    cron.schedule('*/30 * * * * *', async () => {
         try {
             await sync();
         } catch (err) {
@@ -77,7 +85,8 @@ export async function syncPaths(): Promise<void> {
         } else {
             if (
                 exists.record !== payload.record
-                || exists.runOnInit !== payload.runOnInit
+                || exists.source !== payload.source
+                || exists.sourceOnDemand !== payload.sourceOnDemand
             ) {
                 await updateMediaMTXPath(payload);
             }
@@ -95,14 +104,14 @@ export function createPayload(path: CloudTAKRemotePath): Path {
     if (path.proxy) {
         return {
             name: path.path,
-            record: path.recording,
-            runOnInit: `ffmpeg -re -i '${path.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${path.path}`
+            source: path.proxy,
+            sourceOnDemand: true,
+            record: path.recording
         };
     } else {
         return {
             name: path.path,
-            record: path.recording,
-            runOnInit: ''
+            record: path.recording
         };
     }
 }
@@ -132,7 +141,11 @@ export async function createMediaMTXPath(path: Path): Promise<void> {
         body: JSON.stringify(path)
     });
 
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+        const errorText = await res.text();
+        console.error('MediaMTX API error:', res.status, errorText);
+        throw new Error(errorText);
+    }
 }
 
 export async function updateMediaMTXPath(path: Path): Promise<void> {
