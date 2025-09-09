@@ -21,8 +21,8 @@ apiTrustedProxies: []
 
 playback: yes
 rtsp: yes
-protocols: [tcp]
-encryption: "no"
+rtspTransports: [tcp]
+rtspEncryption: "no"
 rtspAddress: :8554
 rtspsAddress: :8322
 rtspAuthMethods: [basic]

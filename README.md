@@ -7,10 +7,6 @@
 MediaMTX currently does not persist API operations to the config file, as such the Dockerfile is bundled with a
 persistance script that will convert the API response and push it to the mediamtx.yml file on change
 
-By default any user can read/write to a new path that is created and the persist script will explicity add paths that
-don't have a user assigned to them under the `any` user. If a path is created alongside a user with more granular permisisons
-about using that path, the persist script will NOT add the path to the `any` user.
-
 ## Ports
 
 | Port | Notes |
@@ -18,6 +14,18 @@ about using that path, the persist script will NOT add the path to the `any` use
 | 8554 | RTSP `rtsp://<server>:8554/<mystream>` |
 | 8889 | WebRTC `http://<server>:8889/<mystream>/publish` |
 | 8890 | SRT `srt://localhost:8890?streamid=publish:mystream&pkt_size=1316` |
+
+## Local Development
+
+To run the media server locally, you can use Docker. First ensure that you have a local CloudTAK instance running and then run:
+
+```sh
+docker build -t mediamtx .
+```
+
+```
+docker run --network='host' -e CLOUDTAK_URL='http://localhost:5001/api' -e MediaSecret='<MediaSecret>' -e SigningSecret='<SigningSecret>' mediamtx:latest
+```
 
 ## AWS Deployment
 
