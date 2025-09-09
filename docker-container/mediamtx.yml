@@ -49,3 +49,7 @@ webrtcAllowOrigin: '*'
 
 srt: yes
 srtAddress: :8890
+
+# Path defaults - increase timeout for slow HLS sources
+pathDefaults:
+  runOnDemandStartTimeout: 30s
