@@ -154,8 +154,8 @@ const Resources = {
         Type: 'AWS::ECS::TaskDefinition',
         Properties: {
             Family: cf.join([cf.stackName, '-service']),
-            Cpu: 1024,
-            Memory: 4096 * 2,
+            Cpu: cf.ref('ComputeCpus'),
+            Memory: cf.ref('ComputeMemory'),
             NetworkMode: 'awsvpc',
             RequiresCompatibilities: ['FARGATE'],
             Tags: [{
@@ -415,6 +415,16 @@ export default cf.merge({
         SubdomainPrefix: {
             Description: 'Prefix of domain: ie "video" of video.example.com',
             Type: 'String'
+        },
+        ComputeCpus: {
+            Description: 'Fargate Compute vCPU Units',
+            Type: 'Number',
+            Default: 1024
+        },
+        ComputeMemory: {
+            Description: 'Fargate Compute Memory in MB',
+            Type: 'Number',
+            Default: 8192
         },
         LogLevel: {
             Description: 'Log Level for MediaMTX',
