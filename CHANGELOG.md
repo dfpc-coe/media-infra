@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v5.2.0 - 2025-09-22
+
+- :arrow_up: Update MediaMTX@1.15.0
+
 ### v5.1.0 - 2025-08-10
 
 - :rocket: Support removing expired leases from the config
