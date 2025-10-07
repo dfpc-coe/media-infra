@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v6.0.0 - 2025-09-22
+
+> [!WARNING]
+> The `CLOUDTAK_URL` Env Var is now called `API_URL` for consistency across all CloudTAK services.
+
 ### v5.2.0 - 2025-09-22
 
 - :arrow_up: Update MediaMTX@1.15.0
