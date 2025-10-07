@@ -2,7 +2,7 @@
     "name": "@tak-ps/media-infra",
     "type": "module",
     "private": true,
-    "version": "5.2.0",
+    "version": "6.0.0",
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
         "build": "tsc",
