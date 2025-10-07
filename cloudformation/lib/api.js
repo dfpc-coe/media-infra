@@ -189,7 +189,7 @@ const Resources = {
                     { Name: 'Environment', Value: cf.ref('Environment') },
                     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
                     { Name: 'MediaSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/media:SecretString::AWSCURRENT}}') },
-                    { Name: 'CLOUDTAK_URL', Value: cf.ref('CloudTAKURL') },
+                    { Name: 'API_URL', Value: cf.ref('CloudTAKURL') },
                     { Name: 'AWS_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {

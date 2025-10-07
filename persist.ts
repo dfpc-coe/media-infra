@@ -21,7 +21,7 @@ export type CloudTAKRemotePaths = {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    if (!process.env.CLOUDTAK_URL) throw new Error('CLOUDTAK_URL Env Var not set');
+    if (!process.env.API_URL) throw new Error('API_URL Env Var not set');
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
@@ -185,7 +185,7 @@ export async function listCloudTAKPaths(): Promise<Map<string, CloudTAKRemotePat
     const paths = new Map();
 
     do {
-        const url = new URL(process.env.CLOUDTAK_URL + '/video/lease');
+        const url = new URL(process.env.API_URL + '/video/lease');
         url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
         url.searchParams.append('ephemeral', 'all');

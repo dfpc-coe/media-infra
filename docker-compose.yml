@@ -4,7 +4,7 @@ services:
     build: .
     restart: always
     environment:
-      - CLOUDTAK_URL
+      - API_URL
     ports:
       - 8554:8554
       - 9997:9997

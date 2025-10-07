@@ -9,7 +9,7 @@ readTimeout: 30s
 writeTimeout: 30s
 
 authMethod: http
-authHTTPAddress: CLOUDTAK_URL/video/auth
+authHTTPAddress: API_URL/video/auth
 authHTTPExclude: []
 authInternalUsers: []
 
