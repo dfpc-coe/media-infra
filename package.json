@@ -3,7 +3,7 @@
     "type": "module",
     "private": true,
     "version": "6.0.0",
-    "description": "Infrastructure to support LDAP based auth in TAK",
+    "description": "Infrastructure to support Live Video streams in CloudTAK",
     "scripts": {
         "build": "tsc",
         "lint": "eslint persist.ts cloudformation/"
@@ -13,14 +13,14 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/tak-ps/etl.git"
+        "url": "git+https://github.com/dfpc-coe/media-infra.git"
     },
     "author": "Nick Ingalls <nick@ingalls.ca>",
     "license": "ISC",
     "bugs": {
-        "url": "https://github.com/tak-ps/auth-infra/issues"
+        "url": "https://github.com/dfpc-coe/media-infra/issues"
     },
-    "homepage": "https://github.com/tak-ps/auth-infra#readme",
+    "homepage": "https://github.com/dfpc-code/media-infra#readme",
     "dependencies": {
         "@openaddresses/batch-alarms": "^4.0.0",
         "@openaddresses/cloudfriend": "^7.0.0",
