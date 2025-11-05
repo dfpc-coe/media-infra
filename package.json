@@ -23,8 +23,12 @@
     "homepage": "https://github.com/dfpc-code/media-infra#readme",
     "dependencies": {
         "@openaddresses/batch-alarms": "^4.0.0",
+        "@openaddresses/batch-error": "^2.13.1",
+        "@openaddresses/batch-schema": "^10.19.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",
+        "@sinclair/typebox": "^0.34.41",
+        "cors": "^2.8.5",
         "jsonwebtoken": "^9.0.2",
         "node-cron": "^4.0.0",
         "tsx": "^4.19.2",
