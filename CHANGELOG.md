@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v6.1.0 - 2025-11-06
+
+- :rocket: Introduce NodeJS Proxy API to intercept and trigage config updates in a future version
+
 ### v6.0.0 - 2025-09-22
 
 > [!WARNING]
