@@ -6,7 +6,7 @@
     "description": "Infrastructure to support Live Video streams in CloudTAK",
     "scripts": {
         "build": "tsc",
-        "lint": "eslint persist.ts cloudformation/"
+        "lint": "eslint index.ts lib/*.ts routes/*.ts cloudformation/"
     },
     "engines": {
         "node": ">= 22"
@@ -23,14 +23,19 @@
     "homepage": "https://github.com/dfpc-code/media-infra#readme",
     "dependencies": {
         "@openaddresses/batch-alarms": "^4.0.0",
+        "@openaddresses/batch-error": "^2.13.1",
+        "@openaddresses/batch-schema": "^10.19.0",
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",
+        "@sinclair/typebox": "^0.34.41",
+        "cors": "^2.8.5",
         "jsonwebtoken": "^9.0.2",
         "node-cron": "^4.0.0",
         "tsx": "^4.19.2",
-        "undici": "^7.8.0"
+        "undici": "^7.16.0"
     },
     "devDependencies": {
+        "@types/cors": "^2.8.19",
         "@types/json-diff": "^1.0.3",
         "@types/jsonwebtoken": "^9.0.9",
         "@types/node": "^24.0.0",

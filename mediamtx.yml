@@ -14,7 +14,7 @@ authHTTPExclude: []
 authInternalUsers: []
 
 api: yes
-apiAddress: :9997
+apiAddress: :4000
 apiEncryption: no
 apiAllowOrigin: '*'
 apiTrustedProxies: []

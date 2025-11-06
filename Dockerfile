@@ -29,6 +29,6 @@ ADD package-lock.json /
 
 RUN npm install
 
-ADD persist.ts /
+COPY . /
 
 ENTRYPOINT [ "/start" ]

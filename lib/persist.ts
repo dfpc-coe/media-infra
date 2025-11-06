@@ -20,17 +20,6 @@ export type CloudTAKRemotePaths = {
     items: Array<CloudTAKRemotePath>
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-    if (!process.env.API_URL) throw new Error('API_URL Env Var not set');
-    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
-    if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
-
-    // Ensure Config is written before starting the service
-    await sync();
-
-    await schedule();
-}
-
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         await sync();
@@ -93,7 +82,7 @@ export function createPayload(path: CloudTAKRemotePath): Path {
 }
 
 export async function removeMediaMTXPath(uuid: string): Promise<void> {
-    const url = new URL(`http://localhost:9997/v3/config/paths/delete/${uuid}`);
+    const url = new URL(`http://localhost:4000/v3/config/paths/delete/${uuid}`);
 
     const res = await fetch(url, {
         method: 'DELETE',
@@ -106,7 +95,7 @@ export async function removeMediaMTXPath(uuid: string): Promise<void> {
 }
 
 export async function createMediaMTXPath(path: Path): Promise<void> {
-    const url = new URL(`http://localhost:9997/v3/config/paths/add/${path.name}`);
+    const url = new URL(`http://localhost:4000/v3/config/paths/add/${path.name}`);
 
     const res = await fetch(url, {
         method: 'POST',
@@ -121,7 +110,7 @@ export async function createMediaMTXPath(path: Path): Promise<void> {
 }
 
 export async function updateMediaMTXPath(path: Path): Promise<void> {
-    const url = new URL(`http://localhost:9997/v3/config/paths/replace/${path.name}`);
+    const url = new URL(`http://localhost:4000/v3/config/paths/replace/${path.name}`);
 
     const res = await fetch(url, {
         method: 'POST',
@@ -143,7 +132,7 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
     const paths = new Map<string, Path>();
 
     do {
-        const url = new URL('http://localhost:9997/v3/config/paths/list');
+        const url = new URL('http://localhost:4000/v3/config/paths/list');
         url.searchParams.append('itemsPerPage', String(limit));
         url.searchParams.append('page', String(page));
 
