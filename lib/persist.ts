@@ -20,17 +20,6 @@ export type CloudTAKRemotePaths = {
     items: Array<CloudTAKRemotePath>
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-    if (!process.env.API_URL) throw new Error('API_URL Env Var not set');
-    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
-    if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
-
-    // Ensure Config is written before starting the service
-    await sync();
-
-    await schedule();
-}
-
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
         await sync();

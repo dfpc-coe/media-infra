@@ -32,9 +32,10 @@
         "jsonwebtoken": "^9.0.2",
         "node-cron": "^4.0.0",
         "tsx": "^4.19.2",
-        "undici": "^7.8.0"
+        "undici": "^7.16.0"
     },
     "devDependencies": {
+        "@types/cors": "^2.8.19",
         "@types/json-diff": "^1.0.3",
         "@types/jsonwebtoken": "^9.0.9",
         "@types/node": "^24.0.0",

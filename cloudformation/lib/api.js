@@ -2,7 +2,7 @@ import cf from '@openaddresses/cloudfriend';
 
 const PORTS = [{
     Name: 'HTTP',
-    Port: 4443,
+    Port: 9997,
     Protocol: 'tcp',
     Description: 'HTTP API/HLS',
     Certificate: true,
