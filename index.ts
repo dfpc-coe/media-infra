@@ -8,7 +8,7 @@ import { StandardResponse } from './lib/types.js';
 
 const config = {
     silent: false
-}
+};
 
 const pkg = JSON.parse(String(fs.readFileSync(new URL('./package.json', import.meta.url))));
 
@@ -21,8 +21,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    await sync();
-    await schedule();
+    //await sync();
+    //await schedule();
     await server(config);
 }
 
@@ -52,7 +52,7 @@ export default async function server(config: Config): Promise<void> {
     });
 
     const schema = new Schema(express.Router(), {
-        prefix: '/api',
+        prefix: '/v3',
         logging: {
             skip: function (req, res) {
                 return res.statusCode <= 399 && res.statusCode >= 200;
@@ -64,11 +64,11 @@ export default async function server(config: Config): Promise<void> {
             401: StandardResponse,
             403: StandardResponse,
             404: StandardResponse,
-            500: StandardResponse,
+            500: StandardResponse
         }
     });
 
-    app.use('/api', schema.router);
+    app.use('/v3', schema.router);
 
     await schema.api();
 
@@ -81,9 +81,9 @@ export default async function server(config: Config): Promise<void> {
     );
 
     return new Promise((resolve) => {
-        const srv = app.listen(4443, () => {
+        app.listen(9997, () => {
             if (!config.silent) {
-                console.log('ok - http://localhost:5000');
+                console.log('ok - http://localhost:9997');
             }
 
             return resolve();
