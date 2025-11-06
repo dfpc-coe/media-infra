@@ -21,8 +21,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    //await sync();
-    //await schedule();
+    await sync();
+    await schedule();
+
     await server(config);
 }
 
