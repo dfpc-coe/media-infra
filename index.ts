@@ -6,10 +6,6 @@ import express from 'express';
 import Schema from '@openaddresses/batch-schema';
 import { StandardResponse } from './lib/types.js';
 
-const config = {
-    silent: false
-};
-
 const pkg = JSON.parse(String(fs.readFileSync(new URL('./package.json', import.meta.url))));
 
 process.on('uncaughtExceptionMonitor', (exception, origin) => {
@@ -23,6 +19,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     await sync();
     await schedule();
+
+    const config = {
+        silent: false,
+        MediaSecret: process.env.MediaSecret,
+        SigningSecret: process.env.SigningSecret,
+    };
 
     await server(config);
 }
@@ -53,7 +55,7 @@ export default async function server(config: Config): Promise<void> {
     });
 
     const schema = new Schema(express.Router(), {
-        prefix: '/v3',
+        prefix: '/',
         logging: {
             skip: function (req, res) {
                 return res.statusCode <= 399 && res.statusCode >= 200;
@@ -69,7 +71,7 @@ export default async function server(config: Config): Promise<void> {
         }
     });
 
-    app.use('/v3', schema.router);
+    app.use('/', schema.router);
 
     await schema.api();
 

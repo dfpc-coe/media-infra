@@ -4,7 +4,7 @@ import proxy from '../lib/proxy.js';
 import Err from '@openaddresses/batch-error';
 
 export default async function router(schema: Schema) {
-    await schema.get('/config/global/get', {
+    await schema.get('/v3/config/global/get', {
         name: 'Global Config',
         group: 'MediaMTX',
         description: 'Returns Global Config',
@@ -19,7 +19,7 @@ export default async function router(schema: Schema) {
         }
     });
 
-    await schema.post('/config/paths/add/:path', {
+    await schema.post('/v3/config/paths/add/:path', {
         name: 'Server Config',
         group: 'MediaMTX',
         description: 'Create Path Config',
@@ -29,6 +29,8 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
+            //TODO REMOVE
+            return res.json({});
             await proxy({
                 url: `http://localhost:4000/v3/config/paths/add/${req.params.path}`,
                 method: 'POST',
@@ -40,7 +42,7 @@ export default async function router(schema: Schema) {
         }
     });
 
-    await schema.patch('/config/paths/patch/:path', {
+    await schema.patch('/v3/config/paths/patch/:path', {
         name: 'Server Config',
         group: 'MediaMTX',
         description: 'Patch Path Config',
@@ -61,7 +63,7 @@ export default async function router(schema: Schema) {
         }
     });
 
-    await schema.get('/paths/list', {
+    await schema.get('/v3/paths/list', {
         name: 'Paths List',
         group: 'MediaMTX',
         description: 'Returns Path List',
@@ -76,7 +78,7 @@ export default async function router(schema: Schema) {
         }
     });
 
-    await schema.get('/paths/get/:path', {
+    await schema.get('/v3/paths/get/:path', {
         name: 'Paths List',
         group: 'MediaMTX',
         description: 'Returns Path List',
@@ -94,7 +96,7 @@ export default async function router(schema: Schema) {
         }
     });
 
-    await schema.delete('/paths/get/:path', {
+    await schema.delete('/v3/paths/get/:path', {
         name: 'Paths List',
         group: 'MediaMTX',
         description: 'Deletes a Path',
@@ -113,7 +115,7 @@ export default async function router(schema: Schema) {
         }
     });
 
-    await schema.get('/recordings/get/:path', {
+    await schema.get('/v3/recordings/get/:path', {
         name: 'Get Recordings',
         group: 'MediaMTX',
         description: 'Returns Recordings for a Path',

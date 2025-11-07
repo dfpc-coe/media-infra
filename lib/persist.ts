@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { fetch } from 'undici';
 import { CloudTAKRemotePath, CloudTAKRemotePaths, Path } from './types.js';
+import { createPayload } from './payload.js';
 import { Static } from '@sinclair/typebox';
 import cron from 'node-cron';
 
@@ -28,6 +29,11 @@ export async function syncPaths(): Promise<void> {
     for (const path of paths.values()) {
         const exists = existing.get(path.path);
 
+        if (path.proxy && path.proxy.startsWith('http')) {
+            // We use the HLS proxy for existing HLS streams
+            continue;
+        }
+
         const payload = createPayload(path);
 
         if (!exists) {
@@ -46,22 +52,6 @@ export async function syncPaths(): Promise<void> {
         if (!paths.has(exist)) {
             await removeMediaMTXPath(exist);
         }
-    }
-}
-
-export function createPayload(path: Static<typeof CloudTAKRemotePath>): Static<typeof Path> {
-    if (path.proxy) {
-        return {
-            name: path.path,
-            record: path.recording,
-            runOnInit: `ffmpeg -re -i '${path.proxy}' -vcodec libx264 -profile:v baseline -g 60 -acodec aac -f mpegts srt://127.0.0.1:8890?streamid=publish:${path.path}`
-        };
-    } else {
-        return {
-            name: path.path,
-            record: path.recording,
-            runOnInit: ''
-        };
     }
 }
 
@@ -150,6 +140,25 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Static<typeof 
     return paths;
 }
 
+export async function getCloudTAKPath(path: string): Promise<Static<typeof CloudTAKRemotePath>> {
+    const url = new URL(process.env.API_URL + `/video/lease/${path}`);
+
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer etl.${jwt.sign({ access: 'lease', id: 'any', internal: true }, String(process.env.SigningSecret))}`
+        }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    const body = await res.json() as {
+        lease: Static<typeof CloudTAKRemotePath>;
+    }
+
+    return body.lease;
+}
+
 export async function listCloudTAKPaths(): Promise<Map<string, Static<typeof CloudTAKRemotePath>>> {
     let total = 0;
     const limit = 100;
@@ -161,7 +170,7 @@ export async function listCloudTAKPaths(): Promise<Map<string, Static<typeof Clo
         const url = new URL(process.env.API_URL + '/video/lease');
         url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
-        url.searchParams.append('ephemeral', 'all');
+        url.searchParams.append('ephemeral', 'false');
         url.searchParams.append('impersonate', 'true');
         url.searchParams.append('page', String(page));
 
