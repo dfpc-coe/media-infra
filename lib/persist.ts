@@ -1,24 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { fetch } from 'undici';
+import { CloudTAKRemotePath, CloudTAKRemotePaths, Path } from './types.js';
+import { Static } from '@sinclair/typebox';
 import cron from 'node-cron';
-
-export type Path = {
-    name: string,
-    runOnInit: string,
-    record: boolean,
-};
-
-export type CloudTAKRemotePath = {
-    id: number,
-    path: string,
-    recording: boolean,
-    proxy: string | null,
-}
-
-export type CloudTAKRemotePaths = {
-    total: number,
-    items: Array<CloudTAKRemotePath>
-}
 
 export async function schedule() {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
@@ -65,7 +49,7 @@ export async function syncPaths(): Promise<void> {
     }
 }
 
-export function createPayload(path: CloudTAKRemotePath): Path {
+export function createPayload(path: Static<typeof CloudTAKRemotePath>): Static<typeof Path> {
     if (path.proxy) {
         return {
             name: path.path,
@@ -94,7 +78,7 @@ export async function removeMediaMTXPath(uuid: string): Promise<void> {
     if (!res.ok) throw new Error(await res.text());
 }
 
-export async function createMediaMTXPath(path: Path): Promise<void> {
+export async function createMediaMTXPath(path: Static<typeof Path>): Promise<void> {
     const url = new URL(`http://localhost:4000/v3/config/paths/add/${path.name}`);
 
     const res = await fetch(url, {
@@ -109,7 +93,7 @@ export async function createMediaMTXPath(path: Path): Promise<void> {
     if (!res.ok) throw new Error(await res.text());
 }
 
-export async function updateMediaMTXPath(path: Path): Promise<void> {
+export async function updateMediaMTXPath(path: Static<typeof Path>): Promise<void> {
     const url = new URL(`http://localhost:4000/v3/config/paths/replace/${path.name}`);
 
     const res = await fetch(url, {
@@ -124,12 +108,12 @@ export async function updateMediaMTXPath(path: Path): Promise<void> {
     if (!res.ok) throw new Error(await res.text());
 }
 
-export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
+export async function listMediaMTXPathsMap(): Promise<Map<string, Static<typeof Path>>> {
     let total = 0;
     const limit = 100;
     let page = 0;
 
-    const paths = new Map<string, Path>();
+    const paths = new Map<string, Static<typeof Path>>();
 
     do {
         const url = new URL('http://localhost:4000/v3/config/paths/list');
@@ -151,7 +135,7 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
         const body = await res.json() as {
             pageCount: number,
             itemCount: number,
-            items: Array<Path>
+            items: Array<Static<typeof Path>>
         };
 
         total = body.itemCount;
@@ -166,7 +150,7 @@ export async function listMediaMTXPathsMap(): Promise<Map<string, Path>> {
     return paths;
 }
 
-export async function listCloudTAKPaths(): Promise<Map<string, CloudTAKRemotePath>> {
+export async function listCloudTAKPaths(): Promise<Map<string, Static<typeof CloudTAKRemotePath>>> {
     let total = 0;
     const limit = 100;
     let page = 0;
@@ -190,7 +174,7 @@ export async function listCloudTAKPaths(): Promise<Map<string, CloudTAKRemotePat
 
         if (!res.ok) throw new Error(await res.text());
 
-        const body = await res.json() as CloudTAKRemotePaths;
+        const body = await res.json() as Static<typeof CloudTAKRemotePaths>;
 
         total = body.total;
 
