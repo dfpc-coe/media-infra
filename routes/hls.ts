@@ -1,4 +1,5 @@
 import Schema from '@openaddresses/batch-schema';
+import jwt from 'jsonwebtoken';
 import { Static, Type } from '@sinclair/typebox';
 import type { Config } from '../lib/config.js';
 import { CloudTAKRemotePath } from '../lib/types.js';
@@ -79,7 +80,7 @@ export default async function router(schema: Schema, config: Config) {
         }),
     }, async (req, res) => {
         try {
-            if (!verifySignedUrl(config.MediaSecret, req.query.sig, req.query.exp, 'segment')) {
+            if (!verifySignedUrl(config.MediaSecret, req.params.stream, req.query.sig, req.query.exp, 'segment')) {
                 throw new Err(403, null, 'Invalid or expired signed URL');
             }
 
@@ -96,16 +97,14 @@ export default async function router(schema: Schema, config: Config) {
 
             const arrayBuffer = await segmentResp.arrayBuffer();
 
-            const segmentResp = await axios.get(realUrl, { responseType: 'arraybuffer' });
-
-            let contentType = segmentResp.headers['content-type'];
+            let contentType = segmentResp.headers.get('content-type');
             if (!contentType) {
                 contentType = 'application/octet-stream';
             }
 
             res.setHeader('Content-Type', contentType);
 
-            res.send(arrayBuffer);
+            res.send(Buffer.from(arrayBuffer));
         } catch (err) {
             Err.respond(err, res);
         }
