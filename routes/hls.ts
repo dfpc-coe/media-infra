@@ -1,4 +1,5 @@
 import Schema from '@openaddresses/batch-schema';
+import { randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { Static, Type } from '@sinclair/typebox';
 import type { Config } from '../lib/config.js';
@@ -12,11 +13,17 @@ const cache = new NodeCache({ stdTTL: 600 });
 const cachePath = new Map<string, Static<typeof CloudTAKRemotePath>>();
 
 export default async function router(schema: Schema, config: Config) {
-    await schema.get('/stream/:stream/index.m3u8', {
+    await schema.get('/stream/:stream/:type.m3u8', {
         name: 'HLS Manifest',
         group: 'Stream',
         description: 'Returns Proxied HLS Manifest',
+        query: Type.Object({
+            sig: Type.Optional(Type.String()),
+            exp: Type.Optional(Type.String()),
+            hash: Type.Optional(Type.String())
+        }),
         params: Type.Object({
+            type: Type.Union([Type.Literal('index'), Type.Literal('segment')]),
             stream: Type.String()
         }),
     }, async (req, res) => {
@@ -31,47 +38,94 @@ export default async function router(schema: Schema, config: Config) {
                 throw new Err(404, null, 'No Stream Supplied in Path');
             }
 
-            const url: string = path.proxy;
-
-            const resPlaylist = await fetch(url);
-
-            const m3u8Content = await resPlaylist.text();
-
-            if (!m3u8Content.startsWith('#EXTM3U')) {
-                throw new Err(400, null, 'Invalid M3U8 Manifest');
-            }
-
-            const lines = m3u8Content.split('\n');
-
-            const transformed = lines.map((line) => {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith('#')) {
-                    return line;
+            if (req.query.hash) {
+                if (!verifySignedUrl(config.MediaSecret, req.params.stream, req.query.sig!, req.query.exp!, req.params.type)) {
+                    throw new Err(403, null, 'Invalid or expired signed URL');
                 }
 
-                const absoluteUrl = new URL(trimmed, url).href;
+                const realUrl = cache.get<string>(`${req.params.stream}-${req.query.hash}`);
+                if (!realUrl) {
+                    return res.status(404).json({ error: 'Resource not found or expired' });
+                }
 
-                cache.set(req.params.stream, absoluteUrl);
+                const resPlaylist = await fetch(realUrl);
+                const m3u8Content = await resPlaylist.text();
 
-                const signedUrl = generateSignedUrl(config.MediaSecret, req.params.stream, 'segment');
+                if (!m3u8Content.startsWith('#EXTM3U')) {
+                    throw new Err(400, null, 'Invalid M3U8 Manifest');
+                }
 
-                return signedUrl;
-            });
+                const lines = m3u8Content.split('\n');
 
-            const newM3U8 = transformed.join('\n');
+                const transformed = lines.map((line) => {
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.startsWith('#')) {
+                        return line;
+                    }
 
-            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-            res.send(newM3U8);
+                    // Store the upstream URL in the cache
+                    const absoluteUrl = new URL(trimmed, realUrl).href;
+
+                    const resourceHash = randomUUID();
+
+                    cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+
+                    const signedUrl = generateSignedUrl(config.MediaSecret, req.params.stream, resourceHash, 'ts');
+
+                    return signedUrl;
+                });
+
+                const newM3U8 = transformed.join('\n');
+
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.send(newM3U8);
+            } else {
+                const url: string = path.proxy;
+
+                const resPlaylist = await fetch(url);
+
+                const m3u8Content = await resPlaylist.text();
+
+                if (!m3u8Content.startsWith('#EXTM3U')) {
+                    throw new Err(400, null, 'Invalid M3U8 Manifest');
+                }
+
+                const lines = m3u8Content.split('\n');
+
+                const transformed = lines.map((line) => {
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.startsWith('#')) {
+                        return line;
+                    }
+
+                    // Store the upstream URL in the cache
+                    const absoluteUrl = new URL(trimmed, url).href;
+
+                    const resourceHash = randomUUID();
+
+                    cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+
+                    const signedUrl = generateSignedUrl(config.MediaSecret, req.params.stream, resourceHash, 'm3u8');
+
+                    return signedUrl;
+                });
+
+                const newM3U8 = transformed.join('\n');
+
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.send(newM3U8);
+            }
         } catch (err) {
             Err.respond(err, res);
         }
     });
 
-    await schema.get('/stream/:stream/segment', {
+    await schema.get('/stream/:stream/segment.ts', {
         name: 'HLS Manifest',
         group: 'Stream',
-        description: 'Returns Proxied HLS Manifest',
+        description: 'Returns Proxied HLS Media',
         query: Type.Object({
+            hash: Type.String(),
             sig: Type.String(),
             exp: Type.String()
         }),
@@ -84,7 +138,7 @@ export default async function router(schema: Schema, config: Config) {
                 throw new Err(403, null, 'Invalid or expired signed URL');
             }
 
-            const realUrl = cache.get<string>(req.params.stream);
+            const realUrl = cache.get<string>(`${req.params.stream}-${req.query.hash}`);
             if (!realUrl) {
                 return res.status(404).json({ error: 'Resource not found or expired' });
             }

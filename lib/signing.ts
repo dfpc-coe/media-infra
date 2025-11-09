@@ -3,15 +3,16 @@ import crypto from 'node:crypto';
 export function generateSignedUrl(
     secret: string,
     path: string,
-    type: 'segment'
+    hash: string,
+    type: 'ts' | 'm3u8'
 ): string {
     const exp = Math.floor(Date.now() / 1000) + 600;
     const signature = crypto
         .createHmac('sha256', secret)
-        .update(`${path}${exp}${type}`)
+        .update(`${path}${exp}segment`)
         .digest('hex');
 
-    return `/stream/${path}/segment?sig=${signature}&exp=${exp}`;
+    return `/stream/${path}/segment.${type}?hash=${hash}&sig=${signature}&exp=${exp}`;
 }
 
 export function verifySignedUrl(
