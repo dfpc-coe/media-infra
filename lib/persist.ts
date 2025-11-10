@@ -29,7 +29,7 @@ export async function syncPaths(): Promise<void> {
     for (const path of paths.values()) {
         const exists = existing.get(path.path);
 
-        if (isHLSPath(path)) {
+        if (isHLSPath(path.proxy)) {
             // We use the HLS proxy for existing HLS streams
             continue;
         }

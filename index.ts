@@ -50,7 +50,7 @@ export default async function server(config: Config): Promise<void> {
         credentials: true
     }));
 
-    app.get('/api', (req, res) => {
+    app.get('/', (req, res) => {
         res.json({
             version: pkg.version
         });
