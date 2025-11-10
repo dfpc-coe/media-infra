@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { fetch } from 'undici';
 import { CloudTAKRemotePath, CloudTAKRemotePaths, Path } from './types.js';
-import { createPayload } from './payload.js';
+import { createPayload, isHLSPath } from './payload.js';
 import { Static } from '@sinclair/typebox';
 import cron from 'node-cron';
 
@@ -29,7 +29,7 @@ export async function syncPaths(): Promise<void> {
     for (const path of paths.values()) {
         const exists = existing.get(path.path);
 
-        if (path.proxy && path.proxy.startsWith('http')) {
+        if (isHLSPath(path)) {
             // We use the HLS proxy for existing HLS streams
             continue;
         }

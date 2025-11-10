@@ -1,16 +1,13 @@
 import Schema from '@openaddresses/batch-schema';
 import { randomUUID } from 'node:crypto';
-import jwt from 'jsonwebtoken';
-import { Static, Type } from '@sinclair/typebox';
+import { Type } from '@sinclair/typebox';
 import type { Config } from '../lib/config.js';
-import { CloudTAKRemotePath } from '../lib/types.js';
 import { generateSignedUrl, verifySignedUrl } from '../lib/signing.js';
 import NodeCache from 'node-cache';
 import { getCloudTAKPath } from '../lib/persist.js';
 import Err from '@openaddresses/batch-error';
 
 const cache = new NodeCache({ stdTTL: 600 });
-const cachePath = new Map<string, Static<typeof CloudTAKRemotePath>>();
 
 export default async function router(schema: Schema, config: Config) {
     await schema.get('/stream/:stream/:type.m3u8', {
@@ -28,18 +25,8 @@ export default async function router(schema: Schema, config: Config) {
         }),
     }, async (req, res) => {
         try {
-            let path = cachePath.get(req.params.stream);
-
-            if (!path) {
-                path = await getCloudTAKPath(req.params.stream);
-            }
-
-            if (!path.proxy) {
-                throw new Err(404, null, 'No Stream Supplied in Path');
-            }
-
             if (req.query.hash) {
-                if (!verifySignedUrl(config.MediaSecret, req.params.stream, req.query.sig!, req.query.exp!, req.params.type)) {
+                if (!verifySignedUrl(config.MediaSecret, req.params.stream, req.query.sig!, req.query.exp!, 'segment')) {
                     throw new Err(403, null, 'Invalid or expired signed URL');
                 }
 
@@ -80,6 +67,16 @@ export default async function router(schema: Schema, config: Config) {
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
             } else {
+                const path = await getCloudTAKPath(req.params.stream);
+
+                if (!path.proxy) {
+                    const mediaURL = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
+                    mediaURL.port = '8888';
+
+                    res.redirect(String(mediaURL));
+                    return;
+                }
+
                 const url: string = path.proxy;
 
                 const resPlaylist = await fetch(url);

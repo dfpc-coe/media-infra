@@ -2,8 +2,10 @@ import { Type } from '@sinclair/typebox';
 
 export const Path = Type.Object({
     name: Type.String(),
-    runOnInit: Type.String(),
     record: Type.Boolean(),
+    runOnInit: Type.Optional(Type.String()),
+    source: Type.Optional(Type.String()),
+    sourceOnDemand: Type.Optional(Type.Boolean()),
 });
 
 export const CloudTAKRemotePath = Type.Object({
