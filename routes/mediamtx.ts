@@ -134,10 +134,27 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
-            await proxy({
-                url: `http://localhost:4000/v3/paths/get/${req.params.path}`,
-                headers: req.headers
-            }, res);
+            if (isHLSPath(req.params.path)) {
+                return res.json({
+                    name: req.params.path,
+                    confName: req.params.path,
+                    source: {
+                        id: req.params.path,
+                        type: 'hls'
+                    },
+                    ready: true,
+                    readyTime: new Date().toISOString(),
+                    tracks: [],
+                    bytesReceived: 0,
+                    bytesSent: 0,
+                    readers: []
+                })
+            } else {
+                await proxy({
+                    url: `http://localhost:4000/v3/paths/get/${req.params.path}`,
+                    headers: req.headers
+                }, res);
+            }
         } catch (err) {
             Err.respond(err, res);
         }
