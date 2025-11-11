@@ -22,12 +22,12 @@ export default async function router(schema: Schema) {
     }, async (req, res) => {
         try {
             if (isHLSPath(req.body.source)) {
-                return {
+                return res.json({
                     name: req.body.name,
                     source: req.body.source,
                     sourceOnDemand: true,
                     record: false
-                }
+                })
             } else {
                 await proxy({
                     url: `http://localhost:4000/v3/config/paths/add/${req.params.path}`,
@@ -66,12 +66,12 @@ export default async function router(schema: Schema) {
     }, async (req, res) => {
         try {
             if (isHLSPath(req.body.source)) {
-                return {
+                return res.json({
                     name: req.body.name,
                     source: req.body.source,
                     sourceOnDemand: true,
                     record: false
-                }
+                })
             } else {
                 await proxy({
                     url: `http://localhost:4000/v3/config/paths/patch/${req.params.path}`,
