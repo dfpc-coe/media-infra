@@ -32,8 +32,8 @@ export default async function router(schema: Schema) {
                     headers: req.headers,
                     body: {
                         name: req.body.name,
-                        source: req.body.source,
-                        sourceOnDemand: true,
+                        source: req.body.source ? req.body.source : undefined,
+                        sourceOnDemand: req.body.source ? true : undefined,
                         record: req.body.record,
                         recordPath: '/opt/mediamtx/recordings/%path/%Y-%m-%d_%H-%M-%S-%f',
                         recordFormat: 'fmp4',
@@ -76,8 +76,8 @@ export default async function router(schema: Schema) {
                     headers: req.headers,
                     body: {
                         name: req.body.name,
-                        source: req.body.source,
-                        sourceOnDemand: true,
+                        source: req.body.source ? req.body.source : undefined,
+                        sourceOnDemand: req.body.source ? true : undefined,
                         record: req.body.record,
                         recordPath: '/opt/mediamtx/recordings/%path/%Y-%m-%d_%H-%M-%S-%f',
                         recordFormat: 'fmp4',

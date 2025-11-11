@@ -18,7 +18,6 @@ export function createPayload(path: Static<typeof CloudTAKRemotePath>): Static<t
         return {
             name: path.path,
             record: path.recording,
-            runOnInit: ''
         };
     }
 }
