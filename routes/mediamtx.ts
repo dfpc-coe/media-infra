@@ -16,9 +16,6 @@ export default async function router(schema: Schema) {
                 default: false
             })
         }),
-        params: Type.Object({
-            path: Type.String()
-        }),
     }, async (req, res) => {
         try {
             if (isHLSPath(req.body.source)) {
@@ -110,6 +107,7 @@ export default async function router(schema: Schema) {
             Err.respond(err, res);
         }
     });
+
     await schema.get('/v3/paths/list', {
         name: 'Paths List',
         group: 'MediaMTX',
