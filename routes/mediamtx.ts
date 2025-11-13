@@ -7,9 +7,96 @@ import proxy from '../lib/proxy.js';
 import Err from '@openaddresses/batch-error';
 
 export default async function router(schema: Schema, config: Config) {
+    await schema.get('/path', {
+        name: 'Paths List',
+        group: 'MediaMTX Paths',
+        description: 'Returns Path List',
+    }, async (req, res) => {
+        try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.MEDIA }]
+            });
+
+            await proxy({
+                url: 'http://localhost:4000/v3/paths/list',
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                },
+            }, res);
+        } catch (err) {
+            Err.respond(err, res);
+        }
+    });
+
+    await schema.get('/path/:path', {
+        name: 'Paths List',
+        group: 'MediaMTX Paths',
+        description: 'Returns Path List',
+        params: Type.Object({
+            path: Type.String()
+        }),
+    }, async (req, res) => {
+        try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.MEDIA }]
+            });
+
+            if (isHLSPath(req.params.path)) {
+                return res.json({
+                    name: req.params.path,
+                    confName: req.params.path,
+                    source: {
+                        id: req.params.path,
+                        type: 'hls'
+                    },
+                    ready: true,
+                    readyTime: new Date().toISOString(),
+                    tracks: [],
+                    bytesReceived: 0,
+                    bytesSent: 0,
+                    readers: []
+                })
+            } else {
+                await proxy({
+                    url: `http://localhost:4000/v3/paths/get/${req.params.path}`,
+                    headers: {
+                        'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                    },
+                }, res);
+            }
+        } catch (err) {
+            Err.respond(err, res);
+        }
+    });
+
+    await schema.delete('/path/:path', {
+        name: 'Paths List',
+        group: 'MediaMTX Paths',
+        description: 'Deletes a Path',
+        params: Type.Object({
+            path: Type.String()
+        }),
+    }, async (req, res) => {
+        try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.MEDIA }]
+            });
+
+            await proxy({
+                url: `http://localhost:4000/v3/paths/delete/${req.params.path}`,
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                },
+            }, res);
+        } catch (err) {
+            Err.respond(err, res);
+        }
+    });
+
     await schema.post('/path', {
         name: 'Server Config',
-        group: 'MediaMTX',
+        group: 'MediaMTX Paths',
         description: 'Create Path Config',
         body: Type.Object({
             name: Type.String(),
@@ -59,7 +146,7 @@ export default async function router(schema: Schema, config: Config) {
 
     await schema.patch('/path/:path', {
         name: 'Server Config',
-        group: 'MediaMTX',
+        group: 'MediaMTX Paths',
         description: 'Patch Path Config',
         params: Type.Object({
             path: Type.String()
@@ -130,96 +217,9 @@ export default async function router(schema: Schema, config: Config) {
         }
     });
 
-    await schema.get('/v3/paths/list', {
-        name: 'Paths List',
-        group: 'MediaMTX',
-        description: 'Returns Path List',
-    }, async (req, res) => {
-        try {
-            await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.MEDIA }]
-            });
-
-            await proxy({
-                url: 'http://localhost:4000/v3/paths/list',
-                headers: {
-                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
-                },
-            }, res);
-        } catch (err) {
-            Err.respond(err, res);
-        }
-    });
-
-    await schema.get('/v3/paths/get/:path', {
-        name: 'Paths List',
-        group: 'MediaMTX',
-        description: 'Returns Path List',
-        params: Type.Object({
-            path: Type.String()
-        }),
-    }, async (req, res) => {
-        try {
-            await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.MEDIA }]
-            });
-
-            if (isHLSPath(req.params.path)) {
-                return res.json({
-                    name: req.params.path,
-                    confName: req.params.path,
-                    source: {
-                        id: req.params.path,
-                        type: 'hls'
-                    },
-                    ready: true,
-                    readyTime: new Date().toISOString(),
-                    tracks: [],
-                    bytesReceived: 0,
-                    bytesSent: 0,
-                    readers: []
-                })
-            } else {
-                await proxy({
-                    url: `http://localhost:4000/v3/paths/get/${req.params.path}`,
-                    headers: {
-                        'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
-                    },
-                }, res);
-            }
-        } catch (err) {
-            Err.respond(err, res);
-        }
-    });
-
-    await schema.delete('/v3/paths/get/:path', {
-        name: 'Paths List',
-        group: 'MediaMTX',
-        description: 'Deletes a Path',
-        params: Type.Object({
-            path: Type.String()
-        }),
-    }, async (req, res) => {
-        try {
-            await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.MEDIA }]
-            });
-
-            await proxy({
-                url: `http://localhost:4000/v3/paths/delete/${req.params.path}`,
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
-                },
-            }, res);
-        } catch (err) {
-            Err.respond(err, res);
-        }
-    });
-
     await schema.get('/v3/recordings/get/:path', {
         name: 'Get Recordings',
-        group: 'MediaMTX',
+        group: 'MediaMTX Recordings',
         description: 'Returns Recordings for a Path',
         params: Type.Object({
             path: Type.String()
