@@ -9,7 +9,11 @@ import cron from 'node-cron';
 
 export async function schedule(config: Config) {
     cron.schedule('0,10,20,30,40,50 * * * * *', async () => {
-        await sync(config);
+        try {
+            await sync(config);
+        } catch (err) {
+            console.error('Error during sync:', err);
+        }
     });
 }
 

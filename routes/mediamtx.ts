@@ -21,7 +21,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             if (isHLSPath(req.body.source)) {
@@ -72,7 +72,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             if (isHLSPath(req.body.source)) {
@@ -116,7 +116,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             await proxy({
@@ -137,7 +137,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             await proxy({
@@ -161,7 +161,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             if (isHLSPath(req.params.path)) {
@@ -202,7 +202,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             await proxy({
@@ -227,7 +227,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             await Auth.is_auth(config, req, {
-                resources: [{ access: AuthResourceAccess.ADMIN }]
+                resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
             await proxy({
