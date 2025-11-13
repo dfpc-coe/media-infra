@@ -26,7 +26,7 @@ export default async function router(schema: Schema, config: Config) {
     }, async (req, res) => {
         try {
             if (req.query.hash) {
-                if (!verifySignedUrl(config.MediaSecret, req.params.stream, req.query.sig!, req.query.exp!, 'segment')) {
+                if (!verifySignedUrl(config.SigningSecret, req.params.stream, req.query.sig!, req.query.exp!, 'segment')) {
                     throw new Err(403, null, 'Invalid or expired signed URL');
                 }
 
@@ -57,7 +57,7 @@ export default async function router(schema: Schema, config: Config) {
 
                     cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
 
-                    const signedUrl = generateSignedUrl(config.MediaSecret, req.params.stream, resourceHash, 'ts');
+                    const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
 
                     return signedUrl;
                 });
@@ -67,7 +67,7 @@ export default async function router(schema: Schema, config: Config) {
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
             } else {
-                const path = await getCloudTAKPath(req.params.stream);
+                const path = await getCloudTAKPath(config, req.params.stream);
 
                 if (!path.proxy) {
                     const mediaURL = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
@@ -102,7 +102,7 @@ export default async function router(schema: Schema, config: Config) {
 
                     cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
 
-                    const signedUrl = generateSignedUrl(config.MediaSecret, req.params.stream, resourceHash, 'm3u8');
+                    const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
 
                     return signedUrl;
                 });
@@ -131,7 +131,7 @@ export default async function router(schema: Schema, config: Config) {
         }),
     }, async (req, res) => {
         try {
-            if (!verifySignedUrl(config.MediaSecret, req.params.stream, req.query.sig, req.query.exp, 'segment')) {
+            if (!verifySignedUrl(config.SigningSecret, req.params.stream, req.query.sig, req.query.exp, 'segment')) {
                 throw new Err(403, null, 'Invalid or expired signed URL');
             }
 

@@ -1,10 +1,12 @@
 import { Type } from '@sinclair/typebox';
+import Auth, { AuthResourceAccess, managementToken } from '../lib/auth.js';
+import type { Config } from '../lib/config.js';
 import Schema from '@openaddresses/batch-schema';
 import { isHLSPath } from '../lib/payload.js'
 import proxy from '../lib/proxy.js';
 import Err from '@openaddresses/batch-error';
 
-export default async function router(schema: Schema) {
+export default async function router(schema: Schema, config: Config) {
     await schema.post('/path', {
         name: 'Server Config',
         group: 'MediaMTX',
@@ -18,6 +20,10 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             if (isHLSPath(req.body.source)) {
                 return res.json({
                     name: req.body.name,
@@ -27,9 +33,12 @@ export default async function router(schema: Schema) {
                 })
             } else {
                 await proxy({
-                    url: `http://localhost:4000/v3/config/paths/add/${req.params.path}`,
+                    url: `http://localhost:4000/v3/config/paths/add/${req.body.name}`,
                     method: 'POST',
-                    headers: req.headers,
+                    headers: {
+                        'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: {
                         name: req.body.name,
                         source: req.body.source ? req.body.source : undefined,
@@ -62,6 +71,10 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             if (isHLSPath(req.body.source)) {
                 return res.json({
                     name: req.body.name,
@@ -73,7 +86,10 @@ export default async function router(schema: Schema) {
                 await proxy({
                     url: `http://localhost:4000/v3/config/paths/patch/${req.params.path}`,
                     method: 'PATCH',
-                    headers: req.headers,
+                    headers: {
+                        'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: {
                         name: req.body.name,
                         source: req.body.source ? req.body.source : undefined,
@@ -99,9 +115,15 @@ export default async function router(schema: Schema) {
         description: 'Returns Global Config',
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             await proxy({
                 url: 'http://localhost:4000/v3/config/global/get',
-                headers: req.headers
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                },
             }, res);
         } catch (err) {
             Err.respond(err, res);
@@ -114,9 +136,15 @@ export default async function router(schema: Schema) {
         description: 'Returns Path List',
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             await proxy({
                 url: 'http://localhost:4000/v3/paths/list',
-                headers: req.headers
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                },
             }, res);
         } catch (err) {
             Err.respond(err, res);
@@ -132,6 +160,10 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             if (isHLSPath(req.params.path)) {
                 return res.json({
                     name: req.params.path,
@@ -150,7 +182,9 @@ export default async function router(schema: Schema) {
             } else {
                 await proxy({
                     url: `http://localhost:4000/v3/paths/get/${req.params.path}`,
-                    headers: req.headers
+                    headers: {
+                        'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                    },
                 }, res);
             }
         } catch (err) {
@@ -167,10 +201,16 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             await proxy({
                 url: `http://localhost:4000/v3/paths/delete/${req.params.path}`,
                 method: 'DELETE',
-                headers: req.headers
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                },
             }, res);
         } catch (err) {
             Err.respond(err, res);
@@ -186,9 +226,15 @@ export default async function router(schema: Schema) {
         }),
     }, async (req, res) => {
         try {
+            await Auth.is_auth(config, req, {
+                resources: [{ access: AuthResourceAccess.ADMIN }]
+            });
+
             await proxy({
                 url: `http://localhost:4000/v3/recordings/get/${req.params.path}`,
-                headers: req.headers
+                headers: {
+                    'Authorization': `Basic ${btoa(`management:${managementToken(config.SigningSecret)}`)}`,
+                },
             }, res);
         } catch (err) {
             Err.respond(err, res);

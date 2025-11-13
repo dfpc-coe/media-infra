@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import cors from 'cors';
+import { config } from './lib/config.js';
 import type { Config } from './lib/config.js';
 import { sync, schedule } from './lib/persist.js';
 import express from 'express';
@@ -15,18 +16,10 @@ process.on('uncaughtExceptionMonitor', (exception, origin) => {
 if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.API_URL) throw new Error('API_URL Env Var not set');
     if (!process.env.CLOUDTAK_Config_media_url) throw new Error('CLOUDTAK_Config_media_url Env Var not set');
-    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    await sync();
-    await schedule();
-
-    const config = {
-        silent: false,
-        CLOUDTAK_Config_media_url: process.env.CLOUDTAK_Config_media_url,
-        MediaSecret: process.env.MediaSecret,
-        SigningSecret: process.env.SigningSecret,
-    };
+    await sync(config);
+    await schedule(config);
 
     await server(config);
 }

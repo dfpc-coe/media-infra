@@ -1,6 +1,7 @@
 import Err from '@openaddresses/batch-error';
 import { fetch, Headers } from 'undici';
 import type { Response } from 'express';
+
 const whitelist = new Set([
     'content-type',
     'content-length',

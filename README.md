@@ -24,7 +24,7 @@ docker build -t mediamtx .
 ```
 
 ```
-docker run --network='host' -e API_URL='http://localhost:5001/api' -e MediaSecret='<MediaSecret>' -e SigningSecret='<SigningSecret>' mediamtx:latest
+docker run --network='host' -e API_URL='http://localhost:5001/api' -e SigningSecret='<SigningSecret>' mediamtx:latest
 ```
 
 ## AWS Deployment
