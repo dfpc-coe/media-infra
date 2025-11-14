@@ -3,6 +3,7 @@ import Auth, { AuthResourceAccess, managementToken } from '../lib/auth.js';
 import type { Config } from '../lib/config.js';
 import Schema from '@openaddresses/batch-schema';
 import { isHLSPath } from '../lib/payload.js'
+import { getCloudTAKPath } from '../lib/persist.js';
 import proxy from '../lib/proxy.js';
 import Err from '@openaddresses/batch-error';
 
@@ -29,7 +30,7 @@ export default async function router(schema: Schema, config: Config) {
     });
 
     await schema.get('/path/:path', {
-        name: 'Paths List',
+        name: 'Get Path',
         group: 'MediaMTX Paths',
         description: 'Returns Path List',
         params: Type.Object({
@@ -41,7 +42,9 @@ export default async function router(schema: Schema, config: Config) {
                 resources: [{ access: AuthResourceAccess.MEDIA }]
             });
 
-            if (isHLSPath(req.params.path)) {
+            const lease = await getCloudTAKPath(config, req.params.path);
+
+            if (lease.proxy && isHLSPath(lease.proxy)) {
                 return res.json({
                     name: req.params.path,
                     confName: req.params.path,

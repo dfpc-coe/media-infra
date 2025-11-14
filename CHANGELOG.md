@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v7.0.1 - 2025-11-13
+
+- :bug: Fetch proxy URL to determine HLS status
+
 ### v7.0.0 - 2025-11-13
 
 > [!WARNING]
