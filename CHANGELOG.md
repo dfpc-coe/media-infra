@@ -12,6 +12,14 @@
 
 ### Pending Release
 
+### v7.0.0 - 2025-11-13
+
+> [!WARNING]
+> This version introduces breaking changes to the Proxy API and HLS Proxying support.
+> CloudTAK@12 and above is required to use this version.
+
+- :rocket: Complete NodeJS Proxy API as well as HLS Proxying support
+
 ### v6.1.0 - 2025-11-06
 
 - :rocket: Introduce NodeJS Proxy API to intercept and trigage config updates in a future version
