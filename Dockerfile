@@ -29,6 +29,8 @@ ADD package-lock.json /
 
 RUN npm install
 
-COPY . /
+ADD index.ts /
+COPY lib/ /lib/
+COPY routes/ /routes/
 
 ENTRYPOINT [ "/start" ]

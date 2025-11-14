@@ -1,14 +1,11 @@
 import fs from 'node:fs';
 import cors from 'cors';
+import { config } from './lib/config.js';
 import type { Config } from './lib/config.js';
 import { sync, schedule } from './lib/persist.js';
 import express from 'express';
 import Schema from '@openaddresses/batch-schema';
 import { StandardResponse } from './lib/types.js';
-
-const config = {
-    silent: false
-};
 
 const pkg = JSON.parse(String(fs.readFileSync(new URL('./package.json', import.meta.url))));
 
@@ -18,11 +15,11 @@ process.on('uncaughtExceptionMonitor', (exception, origin) => {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.API_URL) throw new Error('API_URL Env Var not set');
-    if (!process.env.MediaSecret) throw new Error('MediaSecret Env Var not set');
+    if (!process.env.CLOUDTAK_Config_media_url) throw new Error('CLOUDTAK_Config_media_url Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    await sync();
-    await schedule();
+    await sync(config);
+    await schedule(config);
 
     await server(config);
 }
@@ -46,14 +43,14 @@ export default async function server(config: Config): Promise<void> {
         credentials: true
     }));
 
-    app.get('/api', (req, res) => {
+    app.get('/', (req, res) => {
         res.json({
             version: pkg.version
         });
     });
 
     const schema = new Schema(express.Router(), {
-        prefix: '/v3',
+        prefix: '/',
         logging: {
             skip: function (req, res) {
                 return res.statusCode <= 399 && res.statusCode >= 200;
@@ -69,7 +66,7 @@ export default async function server(config: Config): Promise<void> {
         }
     });
 
-    app.use('/v3', schema.router);
+    app.use('/', schema.router);
 
     await schema.api();
 
