@@ -32,7 +32,7 @@ export default async function router(schema: Schema, config: Config) {
     await schema.get('/path/:path', {
         name: 'Get Path',
         group: 'MediaMTX Paths',
-        description: 'Returns Path List',
+        description: 'Return a single path',
         params: Type.Object({
             path: Type.String()
         }),

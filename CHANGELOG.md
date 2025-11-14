@@ -12,9 +12,9 @@
 
 ### Pending Release
 
-### v7.0.1 - 2025-11-13
+### v7.0.2 - 2025-11-13
 
-- :bug: Fetch proxy URL to determine HLS status
+- :bug: Fix circular API dependency
 
 ### v7.0.0 - 2025-11-13
 

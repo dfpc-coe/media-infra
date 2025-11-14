@@ -158,11 +158,7 @@ export async function getCloudTAKPath(config: Config, path: string): Promise<Sta
 
     if (!res.ok) throw new Error(await res.text());
 
-    const body = await res.json() as {
-        lease: Static<typeof CloudTAKRemotePath>;
-    }
-
-    return body.lease;
+    return await res.json() as Static<typeof CloudTAKRemotePath>;
 }
 
 export async function listCloudTAKPaths(config: Config): Promise<Map<string, Static<typeof CloudTAKRemotePath>>> {
