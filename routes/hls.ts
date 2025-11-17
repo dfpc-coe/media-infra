@@ -36,6 +36,7 @@ export default async function router(schema: Schema, config: Config) {
                 }
 
                 const resPlaylist = await fetch(realUrl);
+
                 const m3u8Content = await resPlaylist.text();
 
                 if (!m3u8Content.startsWith('#EXTM3U')) {
@@ -46,19 +47,14 @@ export default async function router(schema: Schema, config: Config) {
 
                 const transformed = lines.map((line) => {
                     const trimmed = line.trim();
-                    if (!trimmed || trimmed.startsWith('#')) {
+                    if (!trimmed || (trimmed.startsWith('#'))) {
                         return line;
                     }
 
-                    // Store the upstream URL in the cache
                     const absoluteUrl = new URL(trimmed, realUrl).href;
-
                     const resourceHash = randomUUID();
-
                     cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-
                     const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
-
                     return signedUrl;
                 });
 
@@ -91,20 +87,35 @@ export default async function router(schema: Schema, config: Config) {
 
                 const transformed = lines.map((line) => {
                     const trimmed = line.trim();
-                    if (!trimmed || trimmed.startsWith('#')) {
+
+                    if (!trimmed || (trimmed.startsWith('#') && !trimmed.startsWith('#EXT-X-MAP:URI'))) {
                         return line;
                     }
 
-                    // Store the upstream URL in the cache
-                    const absoluteUrl = new URL(trimmed, url).href;
+                    if (trimmed.startsWith('#EXT-X-MAP:URI')) {
+                        const absoluteUrl = new URL(
+                            trimmed
+                                .replace(/#EXT-X-MAP:URI=/, '')
+                                .replace(/^"/, '')
+                                .replace(/"$/, ''),
+                            url).href;
 
-                    const resourceHash = randomUUID();
+                        const resourceHash = randomUUID();
+                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'mp4');
+                        return `#EXT-X-MAP:URI="${signedUrl}"`;
+                    } else {
+                        // Store the upstream URL in the cache
+                        const absoluteUrl = new URL(trimmed, url).href;
 
-                    cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+                        const resourceHash = randomUUID();
 
-                    const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
+                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
 
-                    return signedUrl;
+                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
+
+                        return signedUrl;
+                    }
                 });
 
                 const newM3U8 = transformed.join('\n');
@@ -117,7 +128,7 @@ export default async function router(schema: Schema, config: Config) {
         }
     });
 
-    await schema.get('/stream/:stream/segment.ts', {
+    await schema.get('/stream/:stream/segment.:format', {
         name: 'HLS Manifest',
         group: 'Stream',
         description: 'Returns Proxied HLS Media',
@@ -127,7 +138,8 @@ export default async function router(schema: Schema, config: Config) {
             exp: Type.String()
         }),
         params: Type.Object({
-            stream: Type.String()
+            stream: Type.String(),
+            format: Type.String()
         }),
     }, async (req, res) => {
         try {
@@ -142,8 +154,9 @@ export default async function router(schema: Schema, config: Config) {
 
             // Convert to fetch
             const segmentResp = await fetch(realUrl);
+
             if (!segmentResp.ok) {
-                throw new Err(502, null, 'Failed to fetch media segment');
+                throw new Err(502, null, `Failed to fetch media segment: ${segmentResp.status}: ${segmentResp.statusText}`);
             }
 
             const arrayBuffer = await segmentResp.arrayBuffer();
