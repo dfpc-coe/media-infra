@@ -1,4 +1,5 @@
 import Schema from '@openaddresses/batch-schema';
+import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Type } from '@sinclair/typebox';
 import type { Config } from '../lib/config.js';
@@ -36,6 +37,7 @@ export default async function router(schema: Schema, config: Config) {
                 }
 
                 const resPlaylist = await fetch(realUrl);
+
                 const m3u8Content = await resPlaylist.text();
 
                 if (!m3u8Content.startsWith('#EXTM3U')) {
@@ -46,20 +48,21 @@ export default async function router(schema: Schema, config: Config) {
 
                 const transformed = lines.map((line) => {
                     const trimmed = line.trim();
-                    if (!trimmed || trimmed.startsWith('#')) {
+                    if (!trimmed || (trimmed.startsWith('#'))) {
                         return line;
                     }
 
-                    // Store the upstream URL in the cache
                     const absoluteUrl = new URL(trimmed, realUrl).href;
-
                     const resourceHash = randomUUID();
-
                     cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
 
-                    const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
-
-                    return signedUrl;
+                    if (path.parse(absoluteUrl.split('?')[0]).ext === '.ts') {
+                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
+                        return signedUrl;
+                    } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m4s') {
+                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm4s');
+                        return signedUrl;
+                    }
                 });
 
                 const newM3U8 = transformed.join('\n');
@@ -67,9 +70,9 @@ export default async function router(schema: Schema, config: Config) {
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
             } else {
-                const path = await getCloudTAKPath(config, req.params.stream);
+                const cloudtakPath = await getCloudTAKPath(config, req.params.stream);
 
-                if (!path.proxy) {
+                if (!cloudtakPath.proxy) {
                     const mediaURL = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
                     mediaURL.port = '8888';
 
@@ -77,7 +80,7 @@ export default async function router(schema: Schema, config: Config) {
                     return;
                 }
 
-                const url: string = path.proxy;
+                const url: string = cloudtakPath.proxy;
 
                 const resPlaylist = await fetch(url);
 
@@ -91,20 +94,44 @@ export default async function router(schema: Schema, config: Config) {
 
                 const transformed = lines.map((line) => {
                     const trimmed = line.trim();
-                    if (!trimmed || trimmed.startsWith('#')) {
+
+                    if (!trimmed || (trimmed.startsWith('#') && !trimmed.startsWith('#EXT-X-MAP:URI'))) {
                         return line;
                     }
 
-                    // Store the upstream URL in the cache
-                    const absoluteUrl = new URL(trimmed, url).href;
+                    if (trimmed.startsWith('#EXT-X-MAP:URI')) {
+                        const absoluteUrl = new URL(
+                            trimmed
+                                .replace(/#EXT-X-MAP:URI=/, '')
+                                .replace(/^"/, '')
+                                .replace(/"$/, ''),
+                            url).href;
 
-                    const resourceHash = randomUUID();
+                        const resourceHash = randomUUID();
+                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'mp4');
+                        return `#EXT-X-MAP:URI="${signedUrl}"`;
+                    } else {
+                        // Store the upstream URL in the cache
+                        const absoluteUrl = new URL(trimmed, url).href;
 
-                    cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+                        const resourceHash = randomUUID();
 
-                    const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
+                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
 
-                    return signedUrl;
+                        if (path.parse(absoluteUrl.split('?')[0]).ext === '.ts') {
+                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
+                            return signedUrl;
+                        } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m4s') {
+                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm4s');
+                            return signedUrl;
+                        } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m3u8') {
+                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
+                            return signedUrl;
+                        } else {
+                            throw new Err(400, null, 'Unsupported media segment type');
+                        }
+                    }
                 });
 
                 const newM3U8 = transformed.join('\n');
@@ -117,7 +144,7 @@ export default async function router(schema: Schema, config: Config) {
         }
     });
 
-    await schema.get('/stream/:stream/segment.ts', {
+    await schema.get('/stream/:stream/segment.:format', {
         name: 'HLS Manifest',
         group: 'Stream',
         description: 'Returns Proxied HLS Media',
@@ -127,7 +154,8 @@ export default async function router(schema: Schema, config: Config) {
             exp: Type.String()
         }),
         params: Type.Object({
-            stream: Type.String()
+            stream: Type.String(),
+            format: Type.String()
         }),
     }, async (req, res) => {
         try {
@@ -142,8 +170,9 @@ export default async function router(schema: Schema, config: Config) {
 
             // Convert to fetch
             const segmentResp = await fetch(realUrl);
+
             if (!segmentResp.ok) {
-                throw new Err(502, null, 'Failed to fetch media segment');
+                throw new Err(502, null, `Failed to fetch media segment: ${segmentResp.status}: ${segmentResp.statusText}`);
             }
 
             const arrayBuffer = await segmentResp.arrayBuffer();
