@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v7.1.0 - 2025-11-18
+
+- :tada: Support additional HLS Streams in proxy
+
 ### v7.0.2 - 2025-11-13
 
 - :bug: Fix circular API dependency
