@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v7.2.0 - 2025-11-20
+
+- :arrow_up: Update to MediaMTX@1.15.4
+
 ### v7.1.0 - 2025-11-18
 
 - :tada: Support additional HLS Streams in proxy
