@@ -2,7 +2,7 @@
     "name": "@tak-ps/media-infra",
     "type": "module",
     "private": true,
-    "version": "8.0.0",
+    "version": "8.0.1",
     "description": "Infrastructure to support Live Video streams in CloudTAK",
     "scripts": {
         "build": "tsc",
