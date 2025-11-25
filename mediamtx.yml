@@ -9,7 +9,7 @@ readTimeout: 30s
 writeTimeout: 30s
 
 authMethod: http
-authHTTPAddress: API_URL/video/auth
+authHTTPAddress: API_URL/api/video/auth
 authHTTPExclude: []
 authInternalUsers: []
 

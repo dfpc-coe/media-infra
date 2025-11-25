@@ -147,7 +147,7 @@ export async function listMediaMTXPathsMap(config: Config): Promise<Map<string, 
 }
 
 export async function getCloudTAKPath(config: Config, path: string): Promise<Static<typeof CloudTAKRemotePath>> {
-    const url = new URL(process.env.API_URL + `/video/lease/${path}`);
+    const url = new URL(process.env.API_URL + `/api/video/lease/${path}`);
 
     const res = await fetch(url, {
         method: 'GET',
@@ -169,7 +169,7 @@ export async function listCloudTAKPaths(config: Config): Promise<Map<string, Sta
     const paths = new Map();
 
     do {
-        const url = new URL(process.env.API_URL + '/video/lease');
+        const url = new URL(process.env.API_URL + '/api/video/lease');
         url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
         url.searchParams.append('ephemeral', 'false');
