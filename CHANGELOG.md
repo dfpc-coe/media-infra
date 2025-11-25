@@ -12,6 +12,15 @@
 
 ### Pending Release
 
+### v8.0.0 - 2025-11-25
+
+> ![!WARNING]
+> This version introduces breaking changes to the API_URL environment variable.
+> Previously the Media Server expected the full URL including the `/api` prefix.
+> From this version onwards, only the base URL should be provided.
+
+- :rocket: Don't expect `/api` prefix in the API_URL
+
 ### v7.2.0 - 2025-11-20
 
 - :arrow_up: Update to MediaMTX@1.15.4
