@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v8.0.1 - 2025-11-25
+
+- :rocket: Add additional logging on API Failures
+
 ### v8.0.0 - 2025-11-25
 
 > ![!WARNING]
