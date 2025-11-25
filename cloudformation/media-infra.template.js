@@ -13,7 +13,7 @@ export default cf.merge(
                 Type: 'String'
             },
             CloudTAKURL: {
-                Description: 'CloudTAK API Root URL (https://map.example.com/api)',
+                Description: 'CloudTAK API Root URL (https://map.example.com)',
                 Type: 'String'
             },
             Environment: {
