@@ -156,7 +156,10 @@ export async function getCloudTAKPath(config: Config, path: string): Promise<Sta
         }
     });
 
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+        console.error(`Failed CloudTAK API Call: ${url.toString()}`);
+        throw new Error(await res.text());
+    }
 
     return await res.json() as Static<typeof CloudTAKRemotePath>;
 }
@@ -183,7 +186,10 @@ export async function listCloudTAKPaths(config: Config): Promise<Map<string, Sta
             }
         });
 
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+            console.error(`Failed CloudTAK API Call: ${url.toString()}`);
+            throw new Error(await res.text());
+        }
 
         const body = await res.json() as Static<typeof CloudTAKRemotePaths>;
 
