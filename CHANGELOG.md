@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v8.1.0 - 2025-12-10
+
+- :bug: Resilient Startup
+- :arrow_up: MediaMTX@1.15.5
+
 ### v8.0.1 - 2025-11-25
 
 - :rocket: Add additional logging on API Failures
