@@ -18,7 +18,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.CLOUDTAK_Config_media_url) throw new Error('CLOUDTAK_Config_media_url Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
-    await sync(config);
+    try {
+        await sync(config);
+    } catch (err) {
+        console.error('warn - Failed initial sync (Will retry shortly):', err);
+    }
+
     await schedule(config);
 
     await server(config);
