@@ -8,6 +8,8 @@ import NodeCache from 'node-cache';
 import { getCloudTAKPath } from '../lib/persist.js';
 import Err from '@openaddresses/batch-error';
 
+const HEADER_ALLOWLIST = ['authorization', 'user-agent', 'accept', 'accept-language', 'accept-encoding'];
+
 const cache = new NodeCache({ stdTTL: 600 });
 
 export default async function router(schema: Schema, config: Config) {
@@ -36,7 +38,12 @@ export default async function router(schema: Schema, config: Config) {
                     return res.status(404).json({ error: 'Resource not found or expired' });
                 }
 
-                const resPlaylist = await fetch(realUrl);
+                const headers: Record<string, string> = {};
+                for (const h of HEADER_ALLOWLIST) {
+                    if (req.headers[h]) headers[h] = String(req.headers[h]);
+                }
+
+                const resPlaylist = await fetch(realUrl, { headers });
 
                 const m3u8Content = await resPlaylist.text();
 
@@ -80,16 +87,14 @@ export default async function router(schema: Schema, config: Config) {
                     url = new URL(cloudtakPath.proxy);
                 }
 
-                if (req.headers.authorization) {
-                    const auth = req.headers.authorization.split(' ');
-                    if (auth[0] === 'Basic') {
-                        const [username, password] = Buffer.from(auth[1], 'base64').toString().split(':');
-                        url.username = username;
-                        url.password = password;
-                    }
+                const headers: Record<string, string> = {};
+                for (const h of HEADER_ALLOWLIST) {
+                    if (req.headers[h]) headers[h] = String(req.headers[h]);
                 }
 
-                const resPlaylist = await fetch(url);
+                const resPlaylist = await fetch(url, {
+                    headers
+                });
 
                 const m3u8Content = await resPlaylist.text();
 
@@ -176,7 +181,12 @@ export default async function router(schema: Schema, config: Config) {
             }
 
             // Convert to fetch
-            const segmentResp = await fetch(realUrl);
+            const headers: Record<string, string> = {};
+            for (const h of HEADER_ALLOWLIST) {
+                if (req.headers[h]) headers[h] = String(req.headers[h]);
+            }
+
+            const segmentResp = await fetch(realUrl, { headers });
 
             if (!segmentResp.ok) {
                 throw new Err(502, null, `Failed to fetch media segment: ${segmentResp.status}: ${segmentResp.statusText}`);
