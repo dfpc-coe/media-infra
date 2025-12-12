@@ -72,15 +72,22 @@ export default async function router(schema: Schema, config: Config) {
             } else {
                 const cloudtakPath = await getCloudTAKPath(config, req.params.stream);
 
+                let url: URL;
                 if (!cloudtakPath.proxy) {
-                    const mediaURL = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
-                    mediaURL.port = '8888';
-
-                    res.redirect(String(mediaURL));
-                    return;
+                    url = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
+                    url.port = '8888';
+                } else {
+                    url = new URL(cloudtakPath.proxy);
                 }
 
-                const url: string = cloudtakPath.proxy;
+                if (req.headers.authorization) {
+                    const auth = req.headers.authorization.split(' ');
+                    if (auth[0] === 'Basic') {
+                        const [username, password] = Buffer.from(auth[1], 'base64').toString().split(':');
+                        url.username = username;
+                        url.password = password;
+                    }
+                }
 
                 const resPlaylist = await fetch(url);
 
