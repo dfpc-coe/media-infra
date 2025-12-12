@@ -16,7 +16,7 @@ authInternalUsers: []
 api: yes
 apiAddress: :4000
 apiEncryption: no
-apiAllowOrigin: '*'
+apiAllowOrigins: ['*']
 apiTrustedProxies: []
 
 playback: yes
@@ -39,7 +39,7 @@ hlsEncryption: no
 webrtc: no
 webrtcAddress: :8889
 webrtcEncryption: no
-webrtcAllowOrigin: '*'
+webrtcAllowOrigins: ['*']
 
 srt: yes
 srtAddress: :8890

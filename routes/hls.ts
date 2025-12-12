@@ -48,7 +48,8 @@ export default async function router(schema: Schema, config: Config) {
                 const m3u8Content = await resPlaylist.text();
 
                 if (!m3u8Content.startsWith('#EXTM3U')) {
-                    throw new Err(400, null, 'Invalid M3U8 Manifest');
+                    console.error('Invalid M3U8 (Hash): ', m3u8Content);
+                    throw new Err(400, null, 'Invalid M3U8 Manifest (Hash)');
                 }
 
                 const lines = m3u8Content.split('\n');
@@ -99,6 +100,7 @@ export default async function router(schema: Schema, config: Config) {
                 const m3u8Content = await resPlaylist.text();
 
                 if (!m3u8Content.startsWith('#EXTM3U')) {
+                    console.error('Invalid M3U8: ', m3u8Content);
                     throw new Err(400, null, 'Invalid M3U8 Manifest');
                 }
 
