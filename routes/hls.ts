@@ -23,7 +23,7 @@ export default async function router(schema: Schema, config: Config) {
             hash: Type.Optional(Type.String())
         }),
         params: Type.Object({
-            type: Type.Union([Type.Literal('index'), Type.Literal('segment')]),
+            type: Type.String(),
             stream: Type.String()
         }),
     }, async (req, res) => {
@@ -125,6 +125,21 @@ export default async function router(schema: Schema, config: Config) {
                         cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
                         const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'mp4');
                         return `#EXT-X-MAP:URI="${signedUrl}"`;
+                    } else if (trimmed.startsWith('#EXT-X-MEDIA:TYPE')) {
+                        // Looks like: #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="sp",NAME="Espanol",AUTOSELECT=YES,DEFAULT=NO,URI="sp/prog_index.m3u8"
+                        // URL is omitted if no audio track IE Subtitles
+                        if (trimmed.includes('URI=')) {
+                            const parts = trimmed.split('URI=');
+                            const uriPart = parts[1];
+                            const uri = uriPart.replace(/^"/, '').replace(/"$/, '');
+                            const absoluteUrl = new URL(uri, url).href;
+
+                            const resourceHash = randomUUID();
+                            cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
+                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
+
+                            return `${parts[0]}URI="${signedUrl}"`;
+                        }
                     } else {
                         // Store the upstream URL in the cache
                         const absoluteUrl = new URL(trimmed, url).href;
