@@ -1,12 +1,13 @@
 import Schema from '@openaddresses/batch-schema';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { Type } from '@sinclair/typebox';
 import type { Config } from '../lib/config.js';
-import { generateSignedUrl, verifySignedUrl } from '../lib/signing.js';
+import { verifySignedUrl } from '../lib/signing.js';
 import NodeCache from 'node-cache';
 import { getCloudTAKPath } from '../lib/persist.js';
+import { Manifest } from '../lib/manifest.js';
 import Err from '@openaddresses/batch-error';
+
+const HEADER_ALLOWLIST = ['authorization', 'user-agent', 'accept', 'accept-language', 'accept-encoding'];
 
 const cache = new NodeCache({ stdTTL: 600 });
 
@@ -36,105 +37,52 @@ export default async function router(schema: Schema, config: Config) {
                     return res.status(404).json({ error: 'Resource not found or expired' });
                 }
 
-                const resPlaylist = await fetch(realUrl);
+                const headers: Record<string, string> = {};
+                for (const h of HEADER_ALLOWLIST) {
+                    if (req.headers[h]) headers[h] = String(req.headers[h]);
+                }
+
+                const resPlaylist = await fetch(realUrl, {
+                    headers
+                });
+
+                if (!resPlaylist.ok) {
+                    throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                }
 
                 const m3u8Content = await resPlaylist.text();
 
-                if (!m3u8Content.startsWith('#EXTM3U')) {
-                    throw new Err(400, null, 'Invalid M3U8 Manifest');
-                }
-
-                const lines = m3u8Content.split('\n');
-
-                const transformed = lines.map((line) => {
-                    const trimmed = line.trim();
-                    if (!trimmed || (trimmed.startsWith('#'))) {
-                        return line;
-                    }
-
-                    const absoluteUrl = new URL(trimmed, realUrl).href;
-                    const resourceHash = randomUUID();
-                    cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-
-                    if (path.parse(absoluteUrl.split('?')[0]).ext === '.ts') {
-                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
-                        return signedUrl;
-                    } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m4s') {
-                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm4s');
-                        return signedUrl;
-                    }
-                });
-
-                const newM3U8 = transformed.join('\n');
+                const newM3U8 = Manifest.rewrite(m3u8Content, realUrl, req.params.stream, config, cache);
 
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
             } else {
                 const cloudtakPath = await getCloudTAKPath(config, req.params.stream);
 
+                let url: URL;
                 if (!cloudtakPath.proxy) {
-                    const mediaURL = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
-                    mediaURL.port = '8888';
-
-                    res.redirect(String(mediaURL));
-                    return;
+                    url = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
+                    url.port = '8888';
+                } else {
+                    url = new URL(cloudtakPath.proxy);
                 }
 
-                const url: string = cloudtakPath.proxy;
+                const headers: Record<string, string> = {};
+                for (const h of HEADER_ALLOWLIST) {
+                    if (req.headers[h]) headers[h] = String(req.headers[h]);
+                }
 
-                const resPlaylist = await fetch(url);
+                const resPlaylist = await fetch(url, {
+                    headers
+                });
+
+                if (!resPlaylist.ok) {
+                    throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                }
 
                 const m3u8Content = await resPlaylist.text();
 
-                if (!m3u8Content.startsWith('#EXTM3U')) {
-                    throw new Err(400, null, 'Invalid M3U8 Manifest');
-                }
-
-                const lines = m3u8Content.split('\n');
-
-                const transformed = lines.map((line) => {
-                    const trimmed = line.trim();
-
-                    if (!trimmed || (trimmed.startsWith('#') && !trimmed.startsWith('#EXT-X-MAP:URI'))) {
-                        return line;
-                    }
-
-                    if (trimmed.startsWith('#EXT-X-MAP:URI')) {
-                        const absoluteUrl = new URL(
-                            trimmed
-                                .replace(/#EXT-X-MAP:URI=/, '')
-                                .replace(/^"/, '')
-                                .replace(/"$/, ''),
-                            url).href;
-
-                        const resourceHash = randomUUID();
-                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'mp4');
-                        return `#EXT-X-MAP:URI="${signedUrl}"`;
-                    } else {
-                        // Store the upstream URL in the cache
-                        const absoluteUrl = new URL(trimmed, url).href;
-
-                        const resourceHash = randomUUID();
-
-                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-
-                        if (path.parse(absoluteUrl.split('?')[0]).ext === '.ts') {
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
-                            return signedUrl;
-                        } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m4s') {
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm4s');
-                            return signedUrl;
-                        } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m3u8') {
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
-                            return signedUrl;
-                        } else {
-                            throw new Err(400, null, 'Unsupported media segment type');
-                        }
-                    }
-                });
-
-                const newM3U8 = transformed.join('\n');
+                const newM3U8 = Manifest.rewrite(m3u8Content, url.href, req.params.stream, config, cache);
 
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
@@ -169,7 +117,12 @@ export default async function router(schema: Schema, config: Config) {
             }
 
             // Convert to fetch
-            const segmentResp = await fetch(realUrl);
+            const headers: Record<string, string> = {};
+            for (const h of HEADER_ALLOWLIST) {
+                if (req.headers[h]) headers[h] = String(req.headers[h]);
+            }
+
+            const segmentResp = await fetch(realUrl, { headers });
 
             if (!segmentResp.ok) {
                 throw new Err(502, null, `Failed to fetch media segment: ${segmentResp.status}: ${segmentResp.statusText}`);
