@@ -42,7 +42,13 @@ export default async function router(schema: Schema, config: Config) {
                     if (req.headers[h]) headers[h] = String(req.headers[h]);
                 }
 
-                const resPlaylist = await fetch(realUrl, { headers });
+                const resPlaylist = await fetch(realUrl, {
+                    headers
+                });
+
+                if (!resPlaylist.ok) {
+                    throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                }
 
                 const m3u8Content = await resPlaylist.text();
 
@@ -69,6 +75,10 @@ export default async function router(schema: Schema, config: Config) {
                 const resPlaylist = await fetch(url, {
                     headers
                 });
+
+                if (!resPlaylist.ok) {
+                    throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                }
 
                 const m3u8Content = await resPlaylist.text();
 
