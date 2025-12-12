@@ -15,7 +15,8 @@ export class Manifest {
         cache: NodeCache
     ): string {
         if (!content.startsWith('#EXTM3U')) {
-             throw new Err(400, null, 'Invalid M3U8 Manifest');
+            console.error('Invalid M3U8 Manifest:', content);
+            throw new Err(400, null, 'Invalid M3U8 Manifest');
         }
 
         const lines = content.split('\n');
@@ -38,8 +39,8 @@ export class Manifest {
                 cache.set(`${stream}-${resourceHash}`, absoluteUrl);
                 const signedUrl = generateSignedUrl(config.SigningSecret, stream, resourceHash, 'mp4');
                 return `#EXT-X-MAP:URI="${signedUrl}"`;
-            } 
-            
+            }
+
             // Handle EXT-X-MEDIA
             if (trimmed.startsWith('#EXT-X-MEDIA:TYPE')) {
                 if (trimmed.includes('URI=')) {
@@ -69,14 +70,10 @@ export class Manifest {
 
             const ext = path.parse(absoluteUrl.split('?')[0]).ext;
 
-            if (ext === '.ts') {
-                return generateSignedUrl(config.SigningSecret, stream, resourceHash, 'ts');
-            } else if (ext === '.m4s') {
-                return generateSignedUrl(config.SigningSecret, stream, resourceHash, 'm4s');
-            } else if (ext === '.m3u8') {
-                return generateSignedUrl(config.SigningSecret, stream, resourceHash, 'm3u8');
+            if (ext && ext.length > 1) {
+                return generateSignedUrl(config.SigningSecret, stream, resourceHash, ext.slice(1));
             } else {
-                throw new Err(400, null, 'Unsupported media segment type');
+                throw new Err(400, null, `Unsupported media segment type: ${ext}`);
             }
         });
 

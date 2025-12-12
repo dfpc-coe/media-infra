@@ -4,7 +4,7 @@ export function generateSignedUrl(
     secret: string,
     path: string,
     hash: string,
-    type: 'ts' | 'm4s' | 'm3u8' | 'mp4'
+    type: string
 ): string {
     const exp = Math.floor(Date.now() / 1000) + 600;
     const signature = crypto

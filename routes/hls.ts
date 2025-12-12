@@ -22,7 +22,7 @@ export default async function router(schema: Schema, config: Config) {
             hash: Type.Optional(Type.String())
         }),
         params: Type.Object({
-            type: Type.String(),
+            type: Type.Union([Type.Literal('index'), Type.Literal('segment')]),
             stream: Type.String()
         }),
     }, async (req, res) => {
