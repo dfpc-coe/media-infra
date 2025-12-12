@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v8.2.0 - 2025-12-12
+
+- :bug: Proxy all HLS requests to ensure Authentication data isn't lost on redirects
+
 ### v8.1.0 - 2025-12-10
 
 - :bug: Resilient Startup
