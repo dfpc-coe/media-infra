@@ -1,11 +1,10 @@
 import Schema from '@openaddresses/batch-schema';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { Type } from '@sinclair/typebox';
 import type { Config } from '../lib/config.js';
-import { generateSignedUrl, verifySignedUrl } from '../lib/signing.js';
+import { verifySignedUrl } from '../lib/signing.js';
 import NodeCache from 'node-cache';
 import { getCloudTAKPath } from '../lib/persist.js';
+import { Manifest } from '../lib/manifest.js';
 import Err from '@openaddresses/batch-error';
 
 const HEADER_ALLOWLIST = ['authorization', 'user-agent', 'accept', 'accept-language', 'accept-encoding'];
@@ -47,33 +46,7 @@ export default async function router(schema: Schema, config: Config) {
 
                 const m3u8Content = await resPlaylist.text();
 
-                if (!m3u8Content.startsWith('#EXTM3U')) {
-                    console.error('Invalid M3U8 (Hash): ', m3u8Content);
-                    throw new Err(400, null, 'Invalid M3U8 Manifest (Hash)');
-                }
-
-                const lines = m3u8Content.split('\n');
-
-                const transformed = lines.map((line) => {
-                    const trimmed = line.trim();
-                    if (!trimmed || (trimmed.startsWith('#'))) {
-                        return line;
-                    }
-
-                    const absoluteUrl = new URL(trimmed, realUrl).href;
-                    const resourceHash = randomUUID();
-                    cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-
-                    if (path.parse(absoluteUrl.split('?')[0]).ext === '.ts') {
-                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
-                        return signedUrl;
-                    } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m4s') {
-                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm4s');
-                        return signedUrl;
-                    }
-                });
-
-                const newM3U8 = transformed.join('\n');
+                const newM3U8 = Manifest.rewrite(m3u8Content, realUrl, req.params.stream, config, cache);
 
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
@@ -99,71 +72,7 @@ export default async function router(schema: Schema, config: Config) {
 
                 const m3u8Content = await resPlaylist.text();
 
-                if (!m3u8Content.startsWith('#EXTM3U')) {
-                    console.error('Invalid M3U8: ', m3u8Content);
-                    throw new Err(400, null, 'Invalid M3U8 Manifest');
-                }
-
-                const lines = m3u8Content.split('\n');
-
-                const transformed = lines.map((line) => {
-                    const trimmed = line.trim();
-
-                    if (!trimmed || (trimmed.startsWith('#') && !trimmed.startsWith('#EXT-X-MAP:URI'))) {
-                        return line;
-                    }
-
-                    if (trimmed.startsWith('#EXT-X-MAP:URI')) {
-                        const absoluteUrl = new URL(
-                            trimmed
-                                .replace(/#EXT-X-MAP:URI=/, '')
-                                .replace(/^"/, '')
-                                .replace(/"$/, ''),
-                            url).href;
-
-                        const resourceHash = randomUUID();
-                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-                        const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'mp4');
-                        return `#EXT-X-MAP:URI="${signedUrl}"`;
-                    } else if (trimmed.startsWith('#EXT-X-MEDIA:TYPE')) {
-                        // Looks like: #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="sp",NAME="Espanol",AUTOSELECT=YES,DEFAULT=NO,URI="sp/prog_index.m3u8"
-                        // URL is omitted if no audio track IE Subtitles
-                        if (trimmed.includes('URI=')) {
-                            const parts = trimmed.split('URI=');
-                            const uriPart = parts[1];
-                            const uri = uriPart.replace(/^"/, '').replace(/"$/, '');
-                            const absoluteUrl = new URL(uri, url).href;
-
-                            const resourceHash = randomUUID();
-                            cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
-
-                            return `${parts[0]}URI="${signedUrl}"`;
-                        }
-                    } else {
-                        // Store the upstream URL in the cache
-                        const absoluteUrl = new URL(trimmed, url).href;
-
-                        const resourceHash = randomUUID();
-
-                        cache.set(`${req.params.stream}-${resourceHash}`, absoluteUrl);
-
-                        if (path.parse(absoluteUrl.split('?')[0]).ext === '.ts') {
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'ts');
-                            return signedUrl;
-                        } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m4s') {
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm4s');
-                            return signedUrl;
-                        } else if (path.parse(absoluteUrl.split('?')[0]).ext === '.m3u8') {
-                            const signedUrl = generateSignedUrl(config.SigningSecret, req.params.stream, resourceHash, 'm3u8');
-                            return signedUrl;
-                        } else {
-                            throw new Err(400, null, 'Unsupported media segment type');
-                        }
-                    }
-                });
-
-                const newM3U8 = transformed.join('\n');
+                const newM3U8 = Manifest.rewrite(m3u8Content, url.href, req.params.stream, config, cache);
 
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.send(newM3U8);
