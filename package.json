@@ -6,7 +6,8 @@
     "description": "Infrastructure to support Live Video streams in CloudTAK",
     "scripts": {
         "build": "tsc",
-        "lint": "eslint index.ts lib/*.ts routes/*.ts cloudformation/"
+        "lint": "eslint index.ts lib/*.ts routes/*.ts cloudformation/",
+        "test": "tsx --test test/*.test.ts"
     },
     "engines": {
         "node": ">= 22"
