@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v8.3.0 - 2025-12-15
+
+- :rocket: Migrate Signing to use JsonWebTokens
+- :white_check_mark: Add automated CI tests for manifest generation
+
 ### v8.2.0 - 2025-12-12
 
 - :bug: Proxy all HLS requests to ensure Authentication data isn't lost on redirects
