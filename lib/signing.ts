@@ -25,6 +25,7 @@ export function verifySignedUrl(
         if (decoded.path !== path) return false;
         return decoded;
     } catch (err) {
+        console.error(err);
         return false;
     }
 }
