@@ -28,11 +28,11 @@ test('Manifest.rewrite', async (t) => {
         // Check EXT-X-MEDIA rewrite
         const mediaLine = lines.find(l => l.startsWith('#EXT-X-MEDIA:TYPE=AUDIO'));
         assert.ok(mediaLine, 'Media line found');
-        assert.match(mediaLine!, /URI="\/stream\/test-stream\/segment\.m3u8\?hash=[a-f0-9-]+\&sig=[a-f0-9]+\&exp=\d+"/, 'Media URI rewritten correctly');
+        assert.match(mediaLine!, /URI="\/stream\/test-stream\/segment\.m3u8\?token=[a-zA-Z0-9._-]+"/, 'Media URI rewritten correctly');
 
         // Check Stream Inf URI rewrite
         const lastLine = lines[lines.length - 1];
-        assert.match(lastLine, /\/stream\/test-stream\/segment\.m3u8\?hash=[a-f0-9-]+\&sig=[a-f0-9]+\&exp=\d+/, 'Stream URI rewritten correctly');
+        assert.match(lastLine, /\/stream\/test-stream\/segment\.m3u8\?token=[a-zA-Z0-9._-]+/, 'Stream URI rewritten correctly');
     });
 });
 

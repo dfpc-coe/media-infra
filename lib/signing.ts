@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+import jwt from 'jsonwebtoken';
 
 export function generateSignedUrl(
     secret: string,
@@ -6,31 +6,25 @@ export function generateSignedUrl(
     hash: string,
     type: string
 ): string {
-    const exp = Math.floor(Date.now() / 1000) + 600;
-    const signature = crypto
-        .createHmac('sha256', secret)
-        .update(`${path}${exp}segment`)
-        .digest('hex');
+    const token = jwt.sign({
+        path,
+        hash,
+        type
+    }, secret, { expiresIn: '10m' });
 
-    return `/stream/${path}/segment.${type}?hash=${hash}&sig=${signature}&exp=${exp}`;
+    return `/stream/${path}/segment.${type}?token=${token}`;
 }
 
 export function verifySignedUrl(
     secret: string,
     path: string,
-    sig: string,
-    exp: string,
-    type: 'segment'
-): boolean {
-    const now = Math.floor(Date.now() / 1000);
-    if (parseInt(exp, 10) < now) {
+    token: string
+): { path: string; hash: string; type: string } | boolean {
+    try {
+        const decoded = jwt.verify(token, secret) as { path: string; hash: string; type: string };
+        if (decoded.path !== path) return false;
+        return decoded;
+    } catch (err) {
         return false;
     }
-
-    const expectedSig = crypto
-        .createHmac('sha256', secret)
-        .update(`${path}${exp}${type}`)
-        .digest('hex');
-
-    return sig === expectedSig;
 }
