@@ -17,9 +17,7 @@ export default async function router(schema: Schema, config: Config) {
         group: 'Stream',
         description: 'Returns Proxied HLS Manifest',
         query: Type.Object({
-            sig: Type.Optional(Type.String()),
-            exp: Type.Optional(Type.String()),
-            hash: Type.Optional(Type.String())
+            token: Type.Optional(Type.String())
         }),
         params: Type.Object({
             type: Type.Union([Type.Literal('index'), Type.Literal('segment')]),
@@ -27,12 +25,14 @@ export default async function router(schema: Schema, config: Config) {
         }),
     }, async (req, res) => {
         try {
-            if (req.query.hash) {
-                if (!verifySignedUrl(config.SigningSecret, req.params.stream, req.query.sig!, req.query.exp!, 'segment')) {
+            if (req.query.token) {
+                const decoded = verifySignedUrl(config.SigningSecret, req.params.stream, req.query.token);
+
+                if (!decoded || typeof decoded === 'boolean') {
                     throw new Err(403, null, 'Invalid or expired signed URL');
                 }
 
-                const realUrl = cache.get<string>(`${req.params.stream}-${req.query.hash}`);
+                const realUrl = cache.get<string>(`${req.params.stream}-${decoded.hash}`);
                 if (!realUrl) {
                     return res.status(404).json({ error: 'Resource not found or expired' });
                 }
@@ -97,9 +97,7 @@ export default async function router(schema: Schema, config: Config) {
         group: 'Stream',
         description: 'Returns Proxied HLS Media',
         query: Type.Object({
-            hash: Type.String(),
-            sig: Type.String(),
-            exp: Type.String()
+            token: Type.String()
         }),
         params: Type.Object({
             stream: Type.String(),
@@ -107,11 +105,13 @@ export default async function router(schema: Schema, config: Config) {
         }),
     }, async (req, res) => {
         try {
-            if (!verifySignedUrl(config.SigningSecret, req.params.stream, req.query.sig, req.query.exp, 'segment')) {
+            const decoded = verifySignedUrl(config.SigningSecret, req.params.stream, req.query.token);
+
+            if (!decoded || typeof decoded === 'boolean') {
                 throw new Err(403, null, 'Invalid or expired signed URL');
             }
 
-            const realUrl = cache.get<string>(`${req.params.stream}-${req.query.hash}`);
+            const realUrl = cache.get<string>(`${req.params.stream}-${decoded.hash}`);
             if (!realUrl) {
                 return res.status(404).json({ error: 'Resource not found or expired' });
             }
