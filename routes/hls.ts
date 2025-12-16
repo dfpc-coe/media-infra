@@ -47,7 +47,11 @@ export default async function router(schema: Schema, config: Config) {
                 });
 
                 if (!resPlaylist.ok) {
-                    throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                    if (resPlaylist.status === 404) {
+                        throw new Err(404, null, `Stream not found: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                    } else {
+                        throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                    }
                 }
 
                 const m3u8Content = await resPlaylist.text();
@@ -77,7 +81,11 @@ export default async function router(schema: Schema, config: Config) {
                 });
 
                 if (!resPlaylist.ok) {
-                    throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                    if (resPlaylist.status === 404) {
+                        throw new Err(404, null, `Stream not found: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                    } else {
+                        throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+                    }
                 }
 
                 const m3u8Content = await resPlaylist.text();
