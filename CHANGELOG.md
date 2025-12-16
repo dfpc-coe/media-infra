@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v8.3.1 - 2025-12-16
+
+- :rocket: Handle 404 responses from API when generating manifests
+
 ### v8.3.0 - 2025-12-15
 
 - :rocket: Migrate Signing to use JsonWebTokens
