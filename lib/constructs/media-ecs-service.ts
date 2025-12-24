@@ -140,7 +140,8 @@ export class MediaEcsService extends Construct {
         logGroup: logGroup,
       }),
       environment: {
-        CLOUDTAK_URL: props.secrets.cloudTakUrl,
+        API_URL: props.secrets.cloudTakUrl,
+        CLOUDTAK_Config_media_url: props.secrets.cloudTakUrl,
       },
       secrets: {
         SigningSecret: ecs.Secret.fromSecretsManager(props.secrets.signingSecret),

@@ -7,9 +7,9 @@ set -euo pipefail
 
 LOGLEVEL=${LOG_LEVEL:-info}
 
-yq -i ".authHTTPAddress = \"$CLOUDTAK_URL/api/video/auth\"" /mediamtx.yml
+yq -i ".authHTTPAddress = \"$API_URL/api/video/auth\"" /mediamtx.yml
 yq -i ".logLevel = \"$LOGLEVEL\"" /mediamtx.yml
 
-npx tsx persist.ts &
+npx tsx index.ts &
 
 /mediamtx /mediamtx.yml

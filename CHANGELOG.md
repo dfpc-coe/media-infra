@@ -12,6 +12,102 @@
 
 ### Pending Release
 
+### v8.3.1 - 2025-12-16
+
+- :arrow_up: Update MediaMTX to v1.15.5
+- :tada: Add complete Node.js API server with Express
+- :tada: Add HLS manifest proxying and rewriting
+- :tada: Add JWT-based signed URL generation
+- :rocket: Migrate from CLOUDTAK_URL to API_URL environment variable
+- :rocket: Enhanced persistence logic with better error handling
+- :rocket: Add MediaMTX API proxying routes
+- :rocket: Add authentication middleware
+- :rocket: Improved sync frequency (every 10 seconds)
+
+### v8.3.0 - 2025-12-15
+
+- :rocket: Migrate Signing to use JsonWebTokens
+- :white_check_mark: Add automated CI tests for manifest generation
+
+### v8.2.0 - 2025-12-12
+
+- :bug: Proxy all HLS requests to ensure Authentication data isn't lost on redirects
+
+### v8.1.0 - 2025-12-10
+
+- :bug: Resilient Startup
+- :arrow_up: MediaMTX@1.15.5
+
+### v8.0.1 - 2025-11-25
+
+- :rocket: Add additional logging on API Failures
+
+### v8.0.0 - 2025-11-25
+
+> ![!WARNING]
+> This version introduces breaking changes to the API_URL environment variable.
+> Previously the Media Server expected the full URL including the `/api` prefix.
+> From this version onwards, only the base URL should be provided.
+
+- :rocket: Don't expect `/api` prefix in the API_URL
+
+### v7.2.0 - 2025-11-20
+
+- :arrow_up: Update to MediaMTX@1.15.4
+
+### v7.1.0 - 2025-11-18
+
+- :tada: Support additional HLS Streams in proxy
+
+### v7.0.2 - 2025-11-13
+
+- :bug: Fix circular API dependency
+
+### v7.0.0 - 2025-11-13
+
+> [!WARNING]
+> This version introduces breaking changes to the Proxy API and HLS Proxying support.
+> CloudTAK@12 and above is required to use this version.
+
+- :rocket: Complete NodeJS Proxy API as well as HLS Proxying support
+
+### v6.1.0 - 2025-11-06
+
+- :rocket: Introduce NodeJS Proxy API to intercept and trigage config updates in a future version
+
+### v6.0.0 - 2025-09-22
+
+> [!WARNING]
+> The `CLOUDTAK_URL` Env Var is now called `API_URL` for consistency across all CloudTAK services.
+
+### v5.2.0 - 2025-09-22
+
+- :arrow_up: Update MediaMTX@1.15.0
+
+### v5.1.0 - 2025-08-10
+
+- :rocket: Support removing expired leases from the config
+
+### v5.0.0 - 2025-08-10
+
+- :tada: Remove all on disk config in favour of API based sync with the upstream CloudTAK service
+
+### v4.5.0 - 2025-08-09
+
+- :rocket: Change to RunOnInit
+
+### v4.4.0 - 2025-08-09
+
+- :rocket: Allow overriding Health Check Ports/Protocols
+
+### v4.3.0 - 2025-08-08
+
+- :rocket: Use `runOnDemand` with `ffmpeg` for more reliable external stream ingestion
+
+### v4.2.0 - 2025-08-04
+
+- :arrow_up: Update `mediamtx@1.13.1`
+  
 ### v4.1.0 - 2025-07-07
 
 - :arrow_up: Update `mediamtx@1.13.0`

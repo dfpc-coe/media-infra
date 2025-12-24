@@ -1,6 +1,6 @@
 {
   "name": "@tak-nz/media-infra",
-  "version": "1.0.0",
+  "version": "8.3.1",
   "description": "Media infrastructure for TAK-NZ project using AWS CDK",
   "private": true,
   "bin": {

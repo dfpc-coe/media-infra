@@ -1,30 +1,35 @@
-ARG MEDIAMTX_VERSION=1.13.1
-FROM bluenviron/mediamtx:${MEDIAMTX_VERSION}-ffmpeg
+FROM bluenviron/mediamtx:1.15.5-ffmpeg
 
-# Install dependencies
-RUN apk add --no-cache tini curl nodejs npm netcat-openbsd bash yq
+# SRT
+EXPOSE 8890
 
-# Copy base configuration
-COPY docker-container/mediamtx.yml /mediamtx.yml
+# API
+EXPOSE 9997
 
-# Copy package files and install dependencies
-COPY docker-container/package*.json /app/
-WORKDIR /app
+# Metrics
+EXPOSE 9998
+
+# PPROF
+EXPOSE 9999
+
+# Playback
+EXPOSE 9996
+
+# HLS
+EXPOSE 8888
+
+RUN apk add bash vim yq nodejs npm
+
+ADD docker-container/mediamtx.yml /mediamtx.yml
+ADD docker-container/start /start
+
+ADD docker-container/package.json /package.json
+ADD docker-container/package-lock.json /package-lock.json
+
 RUN npm install
 
-# Copy source files
-COPY docker-container/persist.ts /app/
-COPY docker-container/tsconfig.json /app/
+ADD docker-container/index.ts /index.ts
+COPY docker-container/lib/ /lib/
+COPY docker-container/routes/ /routes/
 
-# Copy startup script
-COPY docker-container/start /start
-RUN chmod +x /start
-
-# Create mediamtx config directory
-RUN mkdir -p /opt/mediamtx
-
-# Use tini as PID 1 (following TAK.NZ pattern)
-ENTRYPOINT ["/sbin/tini", "--"]
-
-# Run startup script
-CMD ["/start"]
+ENTRYPOINT [ "/start" ]

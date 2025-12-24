@@ -1,24 +1,23 @@
-# This Config file is reduced to the min required use case for TAK.NZ
+# This Config file is reduced to the min required use case for CloudTAK
 # View: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
 # For full MediaMTX Config Options
 
-logLevel: info
+logLevel: debug
 logDestinations: [stdout]
 
-readTimeout: 60s
-writeTimeout: 60s
-writeQueueSize: 1024
-udpMaxPayloadSize: 1472
+readTimeout: 30s
+writeTimeout: 30s
 
 authMethod: http
-authHTTPAddress: CLOUDTAK_URL/api/video/auth
+authHTTPAddress: API_URL/api/video/auth
 authHTTPExclude: []
+authInternalUsers: []
 
 api: yes
-apiAddress: :9997
+apiAddress: :4000
 apiEncryption: no
-apiAllowOrigin: '*'
-apiTrustedProxies: ['0.0.0.0/0']
+apiAllowOrigins: ['*']
+apiTrustedProxies: []
 
 playback: yes
 rtsp: yes
@@ -34,22 +33,13 @@ rtmpEncryption: "no"
 rtmpsAddress: :1936
 
 hls: yes
-hlsVariant: mpegts
 hlsAddress: :8888
 hlsEncryption: no
-hlsMuxerCloseAfter: 300s
-hlsSegmentCount: 10
-hlsSegmentDuration: 500ms
-hlsPartDuration: 500ms
 
 webrtc: no
 webrtcAddress: :8889
 webrtcEncryption: no
-webrtcAllowOrigin: '*'
+webrtcAllowOrigins: ['*']
 
 srt: yes
 srtAddress: :8890
-
-# Path defaults - increase timeout for slow HLS sources
-pathDefaults:
-  runOnDemandStartTimeout: 30s
