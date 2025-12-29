@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v8.4.0 - 2025-12-29
+
+- :arrow_up: Update `mediamtx@1.15.6`
+
 ### v8.3.1 - 2025-12-16
 
 - :rocket: Handle 404 responses from API when generating manifests
