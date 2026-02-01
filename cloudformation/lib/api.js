@@ -172,7 +172,7 @@ const Resources = {
             }],
             ContainerDefinitions: [{
                 Name: 'api',
-                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
+                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
                 MountPoints: [{
                     ContainerPath: '/opt/mediamtx',
                     SourceVolume: cf.stackName
@@ -225,7 +225,7 @@ const Resources = {
             TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
             ContainerDefinitions: [{
                 Name: 'task',
-                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
+                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
                 PortMappings: PORTS.map((port) => {
                     return {
                         ContainerPort: port.Port,
