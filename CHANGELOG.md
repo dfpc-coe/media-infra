@@ -12,6 +12,15 @@
 
 ### Pending Release
 
+### v9.0.0 - 2025-02-02
+
+> [!WARNING]
+> This version must be deployed into a CloudTAK VPC Environment @ v2.0 or higher.
+> https://github.com/dfpc-coe/vpc
+
+- :tada: Update build to use latest VPC@2 managed ECR
+- :arrow_up: Update `mediamtx@1.16.0`
+
 ### v8.4.0 - 2025-12-29
 
 - :arrow_up: Update `mediamtx@1.15.6`
