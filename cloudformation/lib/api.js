@@ -378,7 +378,7 @@ for (const p of PORTS) {
         Type: 'AWS::ElasticLoadBalancingV2::Listener',
         Properties: {
             Certificates: p.Certificate ? [{
-                CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                CertificateArn: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-acm']))
             }] : [],
             DefaultActions: [{
                 Type: 'forward',
@@ -437,10 +437,6 @@ export default cf.merge({
             Type: 'String',
             AllowedValues: ['true', 'false'],
             Default: 'false'
-        },
-        SSLCertificateIdentifier: {
-            Description: 'ACM SSL Certificate for HTTP Protocol',
-            Type: 'String'
         }
     },
     Outputs: {
