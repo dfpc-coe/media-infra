@@ -47,8 +47,8 @@ function tak() {
     return new Promise((resolve, reject) => {
         const $ = CP.exec(`
             docker compose build mediamtx \
-            && docker tag media-infra-mediamtx:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-media:$\{GITSHA\}" \
-            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-media:$\{GITSHA\}"
+            && docker tag media-infra-mediamtx:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-$\{Environment\}-cloudtak-media:$\{GITSHA\}" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-$\{Environment\}-cloudtak-media:$\{GITSHA\}"
         `, (err) => {
             if (err) return reject(err);
             return resolve();

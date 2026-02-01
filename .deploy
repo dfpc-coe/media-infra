@@ -12,7 +12,7 @@
     ],
     "artifacts": {
         "docker": [
-            "coe-ecr-media:{{gitsha}}"
+            "tak-vpc-{{stack}}-cloudtak-media:{{gitsha}}"
         ]
     }
 }

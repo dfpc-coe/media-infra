@@ -1,4 +1,4 @@
-FROM bluenviron/mediamtx:1.15.6-ffmpeg
+FROM bluenviron/mediamtx:1.16.0-ffmpeg
 
 # SRT
 EXPOSE 8890

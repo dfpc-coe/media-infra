@@ -172,7 +172,7 @@ const Resources = {
             }],
             ContainerDefinitions: [{
                 Name: 'api',
-                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
+                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
                 MountPoints: [{
                     ContainerPath: '/opt/mediamtx',
                     SourceVolume: cf.stackName
@@ -225,7 +225,7 @@ const Resources = {
             TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
             ContainerDefinitions: [{
                 Name: 'task',
-                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-media:', cf.ref('GitSha')]),
+                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
                 PortMappings: PORTS.map((port) => {
                     return {
                         ContainerPort: port.Port,
@@ -378,7 +378,7 @@ for (const p of PORTS) {
         Type: 'AWS::ElasticLoadBalancingV2::Listener',
         Properties: {
             Certificates: p.Certificate ? [{
-                CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                CertificateArn: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-acm']))
             }] : [],
             DefaultActions: [{
                 Type: 'forward',
@@ -437,10 +437,6 @@ export default cf.merge({
             Type: 'String',
             AllowedValues: ['true', 'false'],
             Default: 'false'
-        },
-        SSLCertificateIdentifier: {
-            Description: 'ACM SSL Certificate for HTTP Protocol',
-            Type: 'String'
         }
     },
     Outputs: {
