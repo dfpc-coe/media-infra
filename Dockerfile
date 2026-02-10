@@ -1,4 +1,26 @@
+ARG MEDIAMTX_REPO=https://github.com/EricHenry/mediamtx.git
+ARG MEDIAMTX_BRANCH=mpegts-demuxing
+
+# Build Stage
+FROM golang:1.25-alpine AS builder
+
+ARG MEDIAMTX_REPO
+ARG MEDIAMTX_BRANCH
+
+RUN apk add --no-cache git make
+
+WORKDIR /build
+RUN git clone ${MEDIAMTX_REPO} . \
+    && git checkout ${MEDIAMTX_BRANCH} \
+    && echo "v0.0.0-custom" > internal/core/VERSION \
+    && go generate ./... \
+    && go build -o /mediamtx .
+
+# Final Stage
 FROM bluenviron/mediamtx:1.16.0-ffmpeg
+
+# Copy custom binary
+COPY --from=builder /mediamtx /mediamtx
 
 # SRT
 EXPOSE 8890
@@ -19,17 +41,17 @@ EXPOSE 9996
 EXPOSE 8888
 
 
-RUN apk add bash vim yq nodejs npm yq
+RUN apk add --no-cache bash vim yq nodejs npm
 
-ADD mediamtx.yml /
-ADD start /
+COPY mediamtx.yml /
+COPY start /
 
-ADD package.json /
-ADD package-lock.json /
+COPY package.json /
+COPY package-lock.json /
 
 RUN npm install
 
-ADD index.ts /
+COPY index.ts /
 COPY lib/ /lib/
 COPY routes/ /routes/
 
