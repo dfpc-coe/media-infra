@@ -45,4 +45,4 @@ srt: yes
 srtAddress: :8890
 
 pathDefaults:
-  alwaysAvailable: true
+  rtspDemuxMpegts: yes
