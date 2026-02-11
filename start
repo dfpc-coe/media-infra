@@ -7,7 +7,14 @@ set -euo pipefail
 
 LOGLEVEL=${LOG_LEVEL:-info}
 
-yq -i ".authHTTPAddress = \"$API_URL/api/video/auth\"" /mediamtx.yml
+AUTH_ADDRESS="$API_URL/api/video/auth"
+
+if [[ "$API_URL" == *"localhost"* && "${CLOUDTAK_Mode:-}" == "docker-compose" ]]; then
+  AUTH_ADDRESS="${AUTH_ADDRESS/localhost/api}"
+  export API_URL="${API_URL/localhost/api}"
+fi
+
+yq -i ".authHTTPAddress = \"$AUTH_ADDRESS\"" /mediamtx.yml
 yq -i ".logLevel = \"$LOGLEVEL\"" /mediamtx.yml
 
 npx tsx index.ts &

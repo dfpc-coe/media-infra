@@ -43,3 +43,6 @@ webrtcAllowOrigins: ['*']
 
 srt: yes
 srtAddress: :8890
+
+pathDefaults:
+  rtspDemuxMpegts: yes
