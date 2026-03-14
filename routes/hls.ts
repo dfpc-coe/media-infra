@@ -25,6 +25,10 @@ const HOP_BY_HOP_RESPONSE_HEADERS = new Set([
 
 const cache = new NodeCache({ stdTTL: 600 });
 
+export function getUpstreamRequestMethod(method: string): 'GET' | 'HEAD' {
+    return method === 'HEAD' ? 'HEAD' : 'GET';
+}
+
 type AbortAwareEmitter = {
     aborted?: boolean;
     destroyed?: boolean;
@@ -90,6 +94,14 @@ function shouldSendUpstreamBody(status: number, body: Response['body'] | null): 
     return body !== null && ![204, 205, 304].includes(status);
 }
 
+export function shouldSendProxyBody(
+    method: string,
+    status: number,
+    body: Response['body'] | null
+): body is Response['body'] {
+    return method !== 'HEAD' && shouldSendUpstreamBody(status, body);
+}
+
 export default async function router(schema: Schema, config: Config) {
     await schema.get('/stream/:stream/:type.m3u8', {
         name: 'HLS Manifest',
@@ -117,8 +129,10 @@ export default async function router(schema: Schema, config: Config) {
                 }
 
                 const headers = getProxyRequestHeaders(req.headers);
+                const method = getUpstreamRequestMethod(req.method);
 
                 const resPlaylist = await fetch(realUrl, {
+                    method,
                     headers
                 });
 
@@ -128,6 +142,14 @@ export default async function router(schema: Schema, config: Config) {
                     } else {
                         throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
                     }
+                }
+
+                res.status(resPlaylist.status);
+
+                if (req.method === 'HEAD') {
+                    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                    res.end();
+                    return;
                 }
 
                 const m3u8Content = await resPlaylist.text();
@@ -148,8 +170,10 @@ export default async function router(schema: Schema, config: Config) {
                 }
 
                 const headers = getProxyRequestHeaders(req.headers);
+                const method = getUpstreamRequestMethod(req.method);
 
                 const resPlaylist = await fetch(url, {
+                    method,
                     headers
                 });
 
@@ -159,6 +183,14 @@ export default async function router(schema: Schema, config: Config) {
                     } else {
                         throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
                     }
+                }
+
+                res.status(resPlaylist.status);
+
+                if (req.method === 'HEAD') {
+                    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                    res.end();
+                    return;
                 }
 
                 const m3u8Content = await resPlaylist.text();
@@ -201,8 +233,9 @@ export default async function router(schema: Schema, config: Config) {
 
             // Convert to fetch
             const headers = getProxyRequestHeaders(req.headers);
+            const method = getUpstreamRequestMethod(req.method);
 
-            const segmentResp = await fetch(realUrl, { headers, signal });
+            const segmentResp = await fetch(realUrl, { method, headers, signal });
 
             res.status(segmentResp.status);
 
@@ -214,7 +247,7 @@ export default async function router(schema: Schema, config: Config) {
                 res.setHeader('Content-Type', 'application/octet-stream');
             }
 
-            if (!shouldSendUpstreamBody(segmentResp.status, segmentResp.body)) {
+            if (!shouldSendProxyBody(req.method, segmentResp.status, segmentResp.body)) {
                 res.end();
                 return;
             }

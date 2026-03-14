@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { bindClientDisconnectAbort, getProxyRequestHeaders, getProxyResponseHeaders } from '../routes/hls.js';
+import {
+    bindClientDisconnectAbort,
+    getProxyRequestHeaders,
+    getProxyResponseHeaders,
+    getUpstreamRequestMethod,
+    shouldSendProxyBody
+} from '../routes/hls.js';
 
 class MockAbortEmitter extends EventEmitter {
     aborted = false;
@@ -72,6 +78,32 @@ test('getProxyResponseHeaders', async (t) => {
         assert.deepEqual(getProxyResponseHeaders(headers), [
             ['content-type', 'video/mp2t']
         ]);
+    });
+});
+
+test('getUpstreamRequestMethod', async (t) => {
+    await t.test('preserves HEAD requests upstream', () => {
+        assert.equal(getUpstreamRequestMethod('HEAD'), 'HEAD');
+    });
+
+    await t.test('defaults other methods to GET upstream', () => {
+        assert.equal(getUpstreamRequestMethod('GET'), 'GET');
+        assert.equal(getUpstreamRequestMethod('POST'), 'GET');
+    });
+});
+
+test('shouldSendProxyBody', async (t) => {
+    await t.test('skips bodies for HEAD requests', () => {
+        assert.equal(shouldSendProxyBody('HEAD', 200, {} as Response['body']), false);
+    });
+
+    await t.test('skips bodies for empty upstream responses', () => {
+        assert.equal(shouldSendProxyBody('GET', 204, {} as Response['body']), false);
+        assert.equal(shouldSendProxyBody('GET', 200, null), false);
+    });
+
+    await t.test('streams bodies for normal GET responses', () => {
+        assert.equal(shouldSendProxyBody('GET', 200, {} as Response['body']), true);
     });
 });
 
