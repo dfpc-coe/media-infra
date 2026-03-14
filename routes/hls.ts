@@ -1,5 +1,8 @@
 import Schema from '@openaddresses/batch-schema';
 import { Type } from '@sinclair/typebox';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { ReadableStream } from 'node:stream/web';
 import type { Config } from '../lib/config.js';
 import { verifySignedUrl } from '../lib/signing.js';
 import NodeCache from 'node-cache';
@@ -7,9 +10,85 @@ import { getCloudTAKPath } from '../lib/persist.js';
 import { Manifest } from '../lib/manifest.js';
 import Err from '@openaddresses/batch-error';
 
-const HEADER_ALLOWLIST = ['authorization', 'user-agent', 'accept', 'accept-language', 'accept-encoding'];
+const REQUEST_HEADER_ALLOWLIST = ['authorization', 'user-agent', 'accept', 'accept-language', 'accept-encoding', 'range', 'if-range', 'if-none-match', 'if-modified-since'];
+const HOP_BY_HOP_RESPONSE_HEADERS = new Set([
+    'connection',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'upgrade',
+    'set-cookie'
+]);
 
 const cache = new NodeCache({ stdTTL: 600 });
+
+type AbortAwareEmitter = {
+    aborted?: boolean;
+    destroyed?: boolean;
+    once(event: 'aborted' | 'close', listener: () => void): void;
+    off(event: 'aborted' | 'close', listener: () => void): void;
+};
+
+export function getProxyRequestHeaders(headers: Record<string, string | string[] | undefined>): Record<string, string> {
+    const forwardedHeaders: Record<string, string> = {};
+
+    for (const header of REQUEST_HEADER_ALLOWLIST) {
+        const value = headers[header];
+        if (typeof value === 'string') {
+            forwardedHeaders[header] = value;
+        } else if (Array.isArray(value) && value.length) {
+            forwardedHeaders[header] = value.join(', ');
+        }
+    }
+
+    return forwardedHeaders;
+}
+
+export function getProxyResponseHeaders(headers: Headers): Array<[string, string]> {
+    const forwardedHeaders: Array<[string, string]> = [];
+
+    for (const [header, value] of headers.entries()) {
+        if (HOP_BY_HOP_RESPONSE_HEADERS.has(header.toLowerCase())) continue;
+        forwardedHeaders.push([header, value]);
+    }
+
+    return forwardedHeaders;
+}
+
+export function bindClientDisconnectAbort(req: AbortAwareEmitter, res: AbortAwareEmitter): { signal: AbortSignal; cleanup: () => void } {
+    const controller = new AbortController();
+
+    const abortUpstream = () => {
+        if (!controller.signal.aborted) controller.abort();
+    };
+
+    const cleanup = () => {
+        req.off('aborted', abortUpstream);
+        req.off('close', abortUpstream);
+        res.off('close', abortUpstream);
+    };
+
+    req.once('aborted', abortUpstream);
+    req.once('close', abortUpstream);
+    res.once('close', abortUpstream);
+    controller.signal.addEventListener('abort', cleanup, { once: true });
+
+    if (req.aborted || req.destroyed || res.destroyed) {
+        abortUpstream();
+    }
+
+    return {
+        signal: controller.signal,
+        cleanup
+    };
+}
+
+function shouldSendUpstreamBody(status: number, body: Response['body'] | null): body is Response['body'] {
+    return body !== null && ![204, 205, 304].includes(status);
+}
 
 export default async function router(schema: Schema, config: Config) {
     await schema.get('/stream/:stream/:type.m3u8', {
@@ -37,10 +116,7 @@ export default async function router(schema: Schema, config: Config) {
                     return res.status(404).json({ error: 'Resource not found or expired' });
                 }
 
-                const headers: Record<string, string> = {};
-                for (const h of HEADER_ALLOWLIST) {
-                    if (req.headers[h]) headers[h] = String(req.headers[h]);
-                }
+                const headers = getProxyRequestHeaders(req.headers);
 
                 const resPlaylist = await fetch(realUrl, {
                     headers
@@ -71,10 +147,7 @@ export default async function router(schema: Schema, config: Config) {
                     url = new URL(cloudtakPath.proxy);
                 }
 
-                const headers: Record<string, string> = {};
-                for (const h of HEADER_ALLOWLIST) {
-                    if (req.headers[h]) headers[h] = String(req.headers[h]);
-                }
+                const headers = getProxyRequestHeaders(req.headers);
 
                 const resPlaylist = await fetch(url, {
                     headers
@@ -112,6 +185,8 @@ export default async function router(schema: Schema, config: Config) {
             format: Type.String()
         }),
     }, async (req, res) => {
+        const { signal, cleanup } = bindClientDisconnectAbort(req, res);
+
         try {
             const decoded = verifySignedUrl(config.SigningSecret, req.params.stream, req.query.token);
 
@@ -125,29 +200,39 @@ export default async function router(schema: Schema, config: Config) {
             }
 
             // Convert to fetch
-            const headers: Record<string, string> = {};
-            for (const h of HEADER_ALLOWLIST) {
-                if (req.headers[h]) headers[h] = String(req.headers[h]);
+            const headers = getProxyRequestHeaders(req.headers);
+
+            const segmentResp = await fetch(realUrl, { headers, signal });
+
+            res.status(segmentResp.status);
+
+            for (const [header, value] of getProxyResponseHeaders(segmentResp.headers)) {
+                res.setHeader(header, value);
             }
 
-            const segmentResp = await fetch(realUrl, { headers });
-
-            if (!segmentResp.ok) {
-                throw new Err(502, null, `Failed to fetch media segment: ${segmentResp.status}: ${segmentResp.statusText}`);
+            if (!segmentResp.headers.has('content-type')) {
+                res.setHeader('Content-Type', 'application/octet-stream');
             }
 
-            const arrayBuffer = await segmentResp.arrayBuffer();
-
-            let contentType = segmentResp.headers.get('content-type');
-            if (!contentType) {
-                contentType = 'application/octet-stream';
+            if (!shouldSendUpstreamBody(segmentResp.status, segmentResp.body)) {
+                res.end();
+                return;
             }
 
-            res.setHeader('Content-Type', contentType);
-
-            res.send(Buffer.from(arrayBuffer));
+            await pipeline(
+                Readable.fromWeb(segmentResp.body as ReadableStream),
+                res
+            );
         } catch (err) {
-            Err.respond(err, res);
+            if (signal.aborted) return;
+
+            if (res.headersSent) {
+                res.destroy(err instanceof Error ? err : new Error('Failed to stream media segment'));
+            } else {
+                Err.respond(err, res);
+            }
+        } finally {
+            cleanup();
         }
     });
 }
