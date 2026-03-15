@@ -1,12 +1,54 @@
 import { URL } from 'node:url';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { generateSignedUrl } from './signing.js';
 import type { Config } from './config.js';
 import NodeCache from 'node-cache';
 import Err from '@openaddresses/batch-error';
 
 export class Manifest {
+    static readonly URI_TAGS = ['#EXT-X-MAP', '#EXT-X-MEDIA', '#EXT-X-PART', '#EXT-X-PRELOAD-HINT'];
+
+    static resourceHash(absoluteUrl: string): string {
+        return createHash('sha256').update(absoluteUrl).digest('hex');
+    }
+
+    static rewriteSignedUrl(
+        uri: string,
+        baseUrl: string,
+        stream: string,
+        config: Config,
+        cache: NodeCache
+    ): string {
+        const absoluteUrl = new URL(uri, baseUrl).href;
+        const resourceHash = Manifest.resourceHash(absoluteUrl);
+        cache.set(`${stream}-${resourceHash}`, absoluteUrl);
+
+        const ext = path.parse(new URL(absoluteUrl).pathname).ext;
+
+        if (ext && ext.length > 1) {
+            return generateSignedUrl(config.SigningSecret, stream, resourceHash, ext.slice(1));
+        } else {
+            throw new Err(400, null, `Unsupported media segment type: ${ext}`);
+        }
+    }
+
+    static rewriteUriTag(
+        line: string,
+        baseUrl: string,
+        stream: string,
+        config: Config,
+        cache: NodeCache
+    ): string | null {
+        const isUriTag = Manifest.URI_TAGS.some((tag) => line.startsWith(`${tag}:`));
+        if (!isUriTag || !line.includes('URI="')) return null;
+
+        return line.replace(/URI="([^"]+)"/, (_match, uri: string) => {
+            const signedUrl = Manifest.rewriteSignedUrl(uri, baseUrl, stream, config, cache);
+            return `URI="${signedUrl}"`;
+        });
+    }
+
     static rewrite(
         content: string,
         baseUrl: string,
@@ -26,36 +68,9 @@ export class Manifest {
 
             if (!trimmed) return line;
 
-            // Handle EXT-X-MAP
-            if (trimmed.startsWith('#EXT-X-MAP:URI')) {
-                const absoluteUrl = new URL(
-                    trimmed
-                        .replace(/#EXT-X-MAP:URI=/, '')
-                        .replace(/^"/, '')
-                        .replace(/"$/, ''),
-                    baseUrl).href;
-
-                const resourceHash = randomUUID();
-                cache.set(`${stream}-${resourceHash}`, absoluteUrl);
-                const signedUrl = generateSignedUrl(config.SigningSecret, stream, resourceHash, 'mp4');
-                return `#EXT-X-MAP:URI="${signedUrl}"`;
-            }
-
-            // Handle EXT-X-MEDIA
-            if (trimmed.startsWith('#EXT-X-MEDIA:TYPE')) {
-                if (trimmed.includes('URI=')) {
-                    const parts = trimmed.split('URI=');
-                    const uriPart = parts[1];
-                    const uri = uriPart.replace(/^"/, '').replace(/"$/, '');
-                    const absoluteUrl = new URL(uri, baseUrl).href;
-
-                    const resourceHash = randomUUID();
-                    cache.set(`${stream}-${resourceHash}`, absoluteUrl);
-                    const signedUrl = generateSignedUrl(config.SigningSecret, stream, resourceHash, 'm3u8');
-
-                    return `${parts[0]}URI="${signedUrl}"`;
-                }
-                return line;
+            const rewrittenUriTag = Manifest.rewriteUriTag(trimmed, baseUrl, stream, config, cache);
+            if (rewrittenUriTag) {
+                return rewrittenUriTag;
             }
 
             // Pass through other tags
@@ -64,17 +79,7 @@ export class Manifest {
             }
 
             // Handle URLs
-            const absoluteUrl = new URL(trimmed, baseUrl).href;
-            const resourceHash = randomUUID();
-            cache.set(`${stream}-${resourceHash}`, absoluteUrl);
-
-            const ext = path.parse(absoluteUrl.split('?')[0]).ext;
-
-            if (ext && ext.length > 1) {
-                return generateSignedUrl(config.SigningSecret, stream, resourceHash, ext.slice(1));
-            } else {
-                throw new Err(400, null, `Unsupported media segment type: ${ext}`);
-            }
+            return Manifest.rewriteSignedUrl(trimmed, baseUrl, stream, config, cache);
         });
 
         return transformed.join('\n');
