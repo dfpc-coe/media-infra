@@ -188,7 +188,7 @@ const Resources = {
                     { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
                     { Name: 'Environment', Value: cf.ref('Environment') },
                     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
-                    { Name: 'API_URL', Value: cf.ref('CloudTAKURL') },
+                    { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
                     { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
                     { Name: 'AWS_REGION', Value: cf.region }
                 ],

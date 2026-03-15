@@ -12,10 +12,6 @@ export default cf.merge(
                 Description: 'GitSha that is currently being deployed',
                 Type: 'String'
             },
-            CloudTAKURL: {
-                Description: 'CloudTAK API Root URL (https://map.example.com)',
-                Type: 'String'
-            },
             Environment: {
                 Description: 'VPC/ECS Stack to deploy into',
                 Type: 'String',
