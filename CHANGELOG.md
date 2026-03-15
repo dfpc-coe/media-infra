@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.1.1 - 2026-03-14
+
+- :bug: Fix ESLint Errors
+
 ### v9.1.0 - 2026-03-14
 
 - :rocket: Significant improvements to the Proxy API
