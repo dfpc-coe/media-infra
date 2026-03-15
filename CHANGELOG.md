@@ -12,7 +12,12 @@
 
 ### Pending Release
 
-### v9.0.0 - 2025-02-02
+### v9.1.0 - 2026-03-14
+
+- :rocket: Significant improvements to the Proxy API
+- :tada: Support MPEG-TS
+
+### v9.0.0 - 2026-02-02
 
 > [!WARNING]
 > This version must be deployed into a CloudTAK VPC Environment @ v2.0 or higher.
