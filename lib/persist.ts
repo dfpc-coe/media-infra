@@ -105,13 +105,12 @@ export async function updateMediaMTXPath(config: Config, path: Static<typeof Pat
 }
 
 export async function listMediaMTXPathsMap(config: Config): Promise<Map<string, Static<typeof Path>>> {
-    let total = 0;
     const limit = 100;
     let page = 0;
 
     const paths = new Map<string, Static<typeof Path>>();
 
-    do {
+    while (true) {
         const url = new URL('http://localhost:4000/v3/config/paths/list');
         url.searchParams.append('itemsPerPage', String(limit));
         url.searchParams.append('page', String(page));
@@ -134,14 +133,16 @@ export async function listMediaMTXPathsMap(config: Config): Promise<Map<string, 
             items: Array<Static<typeof Path>>
         };
 
-        total = body.itemCount;
-
         for (const item of body.items) {
             paths.set(item.name, item);
         }
 
         ++page;
-    } while (total > page * limit);
+
+        if (body.itemCount <= page * limit) {
+            break;
+        }
+    }
 
     return paths;
 }
@@ -165,13 +166,12 @@ export async function getCloudTAKPath(config: Config, path: string): Promise<Sta
 }
 
 export async function listCloudTAKPaths(config: Config): Promise<Map<string, Static<typeof CloudTAKRemotePath>>> {
-    let total = 0;
     const limit = 100;
     let page = 0;
 
     const paths = new Map();
 
-    do {
+    while (true) {
         const url = new URL(process.env.API_URL + '/api/video/lease');
         url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
@@ -193,14 +193,16 @@ export async function listCloudTAKPaths(config: Config): Promise<Map<string, Sta
 
         const body = await res.json() as Static<typeof CloudTAKRemotePaths>;
 
-        total = body.total;
-
         for (const item of body.items) {
             paths.set(item.path, item);
         }
 
         ++page;
-    } while (total > page * limit);
+
+        if (body.total <= page * limit) {
+            break;
+        }
+    }
 
     return paths;
 }
