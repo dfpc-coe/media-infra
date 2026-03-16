@@ -7,13 +7,13 @@ import { isHLSPath } from '../lib/payload.js'
 import { getCloudTAKPath } from '../lib/persist.js';
 import proxy from '../lib/proxy.js';
 import Err from '@openaddresses/batch-error';
-import { authenticateMediaMTXRequest } from '../lib/mediamtx-auth.js';
+import { authenticateMediaMTXRequest, MEDIA_MTX_AUTH_CACHE_TTL_SECONDS } from '../lib/mediamtx-auth.js';
 import { MediaMTXAuthRequest, StandardResponse } from '../lib/types.js';
 
 export default async function router(schema: Schema, config: Config) {
     const authCache = new NodeCache({
-        stdTTL: Math.max(1, Math.floor(config.MediaAuthCacheTTL)),
-        checkperiod: Math.max(1, Math.floor(config.MediaAuthCacheTTL / 2)),
+        stdTTL: MEDIA_MTX_AUTH_CACHE_TTL_SECONDS,
+        checkperiod: Math.max(1, Math.floor(MEDIA_MTX_AUTH_CACHE_TTL_SECONDS / 2)),
         useClones: false
     });
 

@@ -5,6 +5,8 @@ import { Static } from '@sinclair/typebox';
 import type { Config } from './config.js';
 import { MediaMTXAuthRequest, StandardResponse } from './types.js';
 
+export const MEDIA_MTX_AUTH_CACHE_TTL_SECONDS = 5 * 60;
+
 type FetchResponse = {
     ok: boolean;
     status: number;
@@ -31,7 +33,7 @@ export function getMediaMTXAuthCacheTTL(
     config: Config,
     auth: Static<typeof MediaMTXAuthRequest>
 ): number {
-    const ttl = Math.max(1, Math.floor(config.MediaAuthCacheTTL));
+    const ttl = MEDIA_MTX_AUTH_CACHE_TTL_SECONDS;
 
     if (auth.user !== 'management' || !auth.password) {
         return ttl;

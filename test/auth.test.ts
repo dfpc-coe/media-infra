@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken';
 import {
     authenticateMediaMTXRequest,
     getMediaMTXAuthCacheKey,
-    getMediaMTXAuthCacheTTL
+    getMediaMTXAuthCacheTTL,
+    MEDIA_MTX_AUTH_CACHE_TTL_SECONDS
 } from '../lib/mediamtx-auth.js';
 import type { Config } from '../lib/config.js';
 
@@ -13,8 +14,7 @@ const baseConfig: Config = {
     silent: true,
     API_URL: 'http://cloudtak.internal:5000',
     CLOUDTAK_Config_media_url: 'http://media.example.com',
-    SigningSecret: 'test-secret',
-    MediaAuthCacheTTL: 30
+    SigningSecret: 'test-secret'
 };
 
 test('getMediaMTXAuthCacheKey', async (t) => {
@@ -78,7 +78,7 @@ test('getMediaMTXAuthCacheTTL', async (t) => {
             query: ''
         });
 
-        assert.equal(ttl, baseConfig.MediaAuthCacheTTL);
+        assert.equal(ttl, MEDIA_MTX_AUTH_CACHE_TTL_SECONDS);
     });
 });
 
