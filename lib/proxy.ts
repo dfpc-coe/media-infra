@@ -2,6 +2,8 @@ import Err from '@openaddresses/batch-error';
 import { fetch, Headers } from 'undici';
 import type { Response } from 'express';
 
+type ProxyBody = string | Buffer | object;
+
 const whitelist = new Set([
     'content-type',
     'content-length',
@@ -15,16 +17,20 @@ export default async function proxy(
         url: string,
         method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
         headers?: Record<string, string | string[] | undefined>,
-        body?: string | Buffer | object
+        body?: ProxyBody
     },
     res: Response
 ): Promise<void> {
     try {
         if (!opts.headers) opts.headers = {};
 
+        let body: string | Buffer | undefined;
+
         if (opts.body && typeof opts.body === 'object' && !(opts.body instanceof Buffer)) {
-            opts.body = JSON.stringify(opts.body);
+            body = JSON.stringify(opts.body);
             if (!opts.headers['content-type']) opts.headers['content-type'] = 'application/json';
+        } else {
+            body = opts.body;
         }
 
         delete opts.headers['content-length'];
@@ -48,7 +54,7 @@ export default async function proxy(
         const resp = await fetch(opts.url, {
             method: opts.method ?? 'GET',
             headers: outHeaders,
-            body: opts.body as any
+            body
         });
 
         const filteredHeaders: Record<string, string> = {};
@@ -59,16 +65,11 @@ export default async function proxy(
         res.writeHead(resp.status, filteredHeaders);
 
         if (resp.body) {
-            const reader: any = (resp.body as any).getReader ? (resp.body as any).getReader() : null;
-            if (reader) {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    res.write(Buffer.from(value));
-                }
-            } else {
-                const ab = await resp.arrayBuffer();
-                res.write(Buffer.from(ab));
+            const reader = resp.body.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value) res.write(Buffer.from(value));
             }
         }
 
