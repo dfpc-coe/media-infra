@@ -1,4 +1,5 @@
 import { Type } from '@sinclair/typebox';
+import NodeCache from 'node-cache';
 import Auth, { AuthResourceAccess, managementToken } from '../lib/auth.js';
 import type { Config } from '../lib/config.js';
 import Schema from '@openaddresses/batch-schema';
@@ -6,8 +7,31 @@ import { isHLSPath } from '../lib/payload.js'
 import { getCloudTAKPath } from '../lib/persist.js';
 import proxy from '../lib/proxy.js';
 import Err from '@openaddresses/batch-error';
+import { authenticateMediaMTXRequest } from '../lib/mediamtx-auth.js';
+import { MediaMTXAuthRequest, StandardResponse } from '../lib/types.js';
 
 export default async function router(schema: Schema, config: Config) {
+    const authCache = new NodeCache({
+        stdTTL: Math.max(1, Math.floor(config.MediaAuthCacheTTL)),
+        checkperiod: Math.max(1, Math.floor(config.MediaAuthCacheTTL / 2)),
+        useClones: false
+    });
+
+    await schema.post('/auth', {
+        name: 'MediaMTX Auth',
+        group: 'MediaMTX',
+        description: 'Authenticate MediaMTX requests with a short-lived in-memory cache',
+        body: MediaMTXAuthRequest,
+        res: StandardResponse
+    }, async (req, res) => {
+        try {
+            const result = await authenticateMediaMTXRequest(config, authCache, req.body);
+            res.status(result.status).json(result.body);
+        } catch (err) {
+            Err.respond(err, res);
+        }
+    });
+
     await schema.get('/path', {
         name: 'Paths List',
         group: 'MediaMTX Paths',
