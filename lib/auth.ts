@@ -1,7 +1,11 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 import Err from '@openaddresses/batch-error';
 import jwt from 'jsonwebtoken';
 import type { Config } from './config.js';
+
+type AuthRequestLike = Pick<Request, 'headers' | 'header'> & {
+    query?: unknown;
+};
 
 export type AuthResourceAccepted = {
     access: AuthResourceAccess;
@@ -66,7 +70,7 @@ export default class Auth {
      */
     static async is_auth(
         config: Config,
-        req: Request<any, any, any, any>,
+        req: AuthRequestLike,
         opts: {
             token?: boolean;
             anyResources?: boolean;
@@ -109,7 +113,7 @@ export default class Auth {
 
 async function auth_request(
     config: Config,
-    req: Request<any, any, any, any>,
+    req: AuthRequestLike,
     opts?: {
         token: boolean
     }
@@ -130,8 +134,9 @@ async function auth_request(
         } else if (
             opts
             && opts.token
-            && req.query
-            && req.query.token
+            && typeof req.query === 'object'
+            && req.query !== null
+            && 'token' in req.query
             && typeof req.query.token === 'string'
         ) {
             return await tokenParser(config, req.query.token, config.SigningSecret);

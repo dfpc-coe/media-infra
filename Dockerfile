@@ -1,5 +1,5 @@
-ARG MEDIAMTX_REPO=https://github.com/EricHenry/mediamtx.git
-ARG MEDIAMTX_BRANCH=mpegts-demuxing
+ARG MEDIAMTX_REPO=https://github.com/bluenviron/mediamtx.git
+ARG MEDIAMTX_BRANCH=v1.17.0
 
 # Build Stage
 FROM golang:1.25-alpine AS builder
@@ -12,12 +12,12 @@ RUN apk add --no-cache git make
 WORKDIR /build
 RUN git clone ${MEDIAMTX_REPO} . \
     && git checkout ${MEDIAMTX_BRANCH} \
-    && echo "v0.0.0-custom" > internal/core/VERSION \
+    && case "${MEDIAMTX_REPO}" in *bluenviron/mediamtx*) ;; *) echo "v0.0.0-custom" > internal/core/VERSION ;; esac \
     && go generate ./... \
     && go build -o /mediamtx .
 
 # Final Stage
-FROM bluenviron/mediamtx:1.16.0-ffmpeg
+FROM bluenviron/mediamtx:1.17.0-ffmpeg
 
 # Copy custom binary
 COPY --from=builder /mediamtx /mediamtx

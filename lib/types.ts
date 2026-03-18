@@ -24,3 +24,15 @@ export const StandardResponse = Type.Object({
     status: Type.Integer(),
     message: Type.String()
 });
+
+export const MediaMTXAuthRequest = Type.Object({
+    user: Type.String(),
+    password: Type.String(),
+    token: Type.Optional(Type.String()),
+    ip: Type.String(),
+    action: Type.String(),
+    path: Type.String(),
+    protocol: Type.String(),
+    id: Type.Union([Type.Null(), Type.String()]),
+    query: Type.String()
+});
