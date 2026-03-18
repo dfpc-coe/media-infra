@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.2.0 - 2026-03-18
+
+- :rocket: Update to MediaMTX@1.17
+
 ### v9.1.1 - 2026-03-14
 
 - :bug: Fix ESLint Errors
