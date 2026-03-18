@@ -20,14 +20,25 @@ const PORTS = [{
     Protocol: 'tcp',
     Description: 'RTSP Protocol',
     Certificate: false,
-    Enabled: true
+    Enabled: false
 },{
     Name: 'RTSPS',
     Port: 8322,
     Protocol: 'tcp',
     Description: 'RTSPS Protocol',
+    Certificate: true,
+    Enabled: true
+},{
+    Name: 'WEBRTCUDP',
+    Port: 8189,
+    Protocol: 'udp',
+    Description: 'WebRTC UDP Media Port',
     Certificate: false,
-    Enabled: false
+    Enabled: true,
+
+    // UDP Health checks fallback to TCP
+    HealthCheckPort: 9997,
+    HealthCheckProtocol: 'tcp'
 },{
     Name: 'RTMP',
     Port: 1935,

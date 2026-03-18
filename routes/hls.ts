@@ -163,8 +163,7 @@ export default async function router(schema: Schema, config: Config) {
 
                 let url: URL;
                 if (!cloudtakPath.proxy) {
-                    url = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
-                    url.port = '8888';
+                    url = new URL(`http://127.0.0.1:8888/${req.params.stream}/index.m3u8`);
                 } else {
                     url = new URL(cloudtakPath.proxy);
                 }

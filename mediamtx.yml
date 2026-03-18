@@ -36,10 +36,12 @@ hls: yes
 hlsAddress: :8888
 hlsEncryption: no
 
-webrtc: no
+webrtc: yes
 webrtcAddress: :8889
 webrtcEncryption: no
 webrtcAllowOrigins: ['*']
+webrtcLocalUDPAddress: :8189
+webrtcAdditionalHosts: []
 
 srt: yes
 srtAddress: :8890

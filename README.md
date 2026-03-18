@@ -12,7 +12,8 @@ persistance script that will convert the API response and push it to the mediamt
 | Port | Notes |
 | ---- | ----- |
 | 8554 | RTSP `rtsp://<server>:8554/<mystream>` |
-| 8889 | WebRTC `http://<server>:8889/<mystream>/publish` |
+| 8889 | WebRTC/WHEP handshake `https://<server>:8889/<mystream>` |
+| 8189/udp | WebRTC media/ICE transport |
 | 8890 | SRT `srt://localhost:8890?streamid=publish:mystream&pkt_size=1316` |
 
 ## Local Development

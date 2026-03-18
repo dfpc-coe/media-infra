@@ -8,12 +8,15 @@ set -euo pipefail
 LOGLEVEL=${LOG_LEVEL:-info}
 
 AUTH_ADDRESS="http://127.0.0.1:9997/auth"
+MEDIA_HOST=$(node -e 'console.log(new URL(process.env.CLOUDTAK_Config_media_url).hostname)')
 
 if [[ "$API_URL" == *"localhost"* && "${CLOUDTAK_Mode:-}" == "docker-compose" ]]; then
   export API_URL="${API_URL/localhost/api}"
 fi
 
 yq -i ".authHTTPAddress = \"$AUTH_ADDRESS\"" /mediamtx.yml
+yq -i ".webrtc = true" /mediamtx.yml
+yq -i ".webrtcAdditionalHosts = [\"$MEDIA_HOST\"]" /mediamtx.yml
 yq -i ".logLevel = \"$LOGLEVEL\"" /mediamtx.yml
 
 npx tsx index.ts &
