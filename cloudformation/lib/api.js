@@ -326,7 +326,7 @@ const Resources = {
         Type: 'AWS::ECS::Service',
         DependsOn: PORTS.map((p) => { return `Listener${p.Name}`; }),
         Properties: {
-            ServiceName: cf.join('-', [cf.stackName, 'Service']),
+            ServiceName: cf.stackName,
             Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
             TaskDefinition: cf.ref('ServiceTaskDefinition'),
             LaunchType: 'FARGATE',

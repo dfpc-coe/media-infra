@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.2.1 - 2026-23
+
+- :rocket: Remove `-Service` postfix from ECS Service Name
+
 ### v9.2.0 - 2026-03-18
 
 - :rocket: Update to MediaMTX@1.17
