@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import {
     bindClientDisconnectAbort,
+    getPlaylistUpstreamUrl,
     getProxyRequestHeaders,
     getProxyResponseHeaders,
     getUpstreamRequestMethod,
@@ -89,6 +90,38 @@ test('getUpstreamRequestMethod', async (t) => {
     await t.test('defaults other methods to GET upstream', () => {
         assert.equal(getUpstreamRequestMethod('GET'), 'GET');
         assert.equal(getUpstreamRequestMethod('POST'), 'GET');
+    });
+});
+
+test('getPlaylistUpstreamUrl', async (t) => {
+    await t.test('uses direct upstream URL for HLS proxies', () => {
+        const url = getPlaylistUpstreamUrl(
+            'camera-1',
+            'https://video.example.com/live/camera-1/index.m3u8',
+            'http://media.example.com'
+        );
+
+        assert.equal(url.toString(), 'https://video.example.com/live/camera-1/index.m3u8');
+    });
+
+    await t.test('uses local MediaMTX HLS output for RTSPS proxies', () => {
+        const url = getPlaylistUpstreamUrl(
+            'camera-1',
+            'rtsps://user:pass@source.example.com:322/live',
+            'http://media.example.com'
+        );
+
+        assert.equal(url.toString(), 'http://media.example.com:8888/camera-1/index.m3u8');
+    });
+
+    await t.test('uses local MediaMTX HLS output when no proxy source exists', () => {
+        const url = getPlaylistUpstreamUrl(
+            'camera-1',
+            null,
+            'http://media.example.com'
+        );
+
+        assert.equal(url.toString(), 'http://media.example.com:8888/camera-1/index.m3u8');
     });
 });
 

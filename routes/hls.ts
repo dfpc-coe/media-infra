@@ -9,6 +9,7 @@ import NodeCache from 'node-cache';
 import { getCloudTAKPath } from '../lib/persist.js';
 import { Manifest } from '../lib/manifest.js';
 import Err from '@openaddresses/batch-error';
+import { isHLSPath } from '../lib/payload.js';
 
 const REQUEST_HEADER_ALLOWLIST = ['authorization', 'user-agent', 'accept', 'accept-language', 'accept-encoding', 'range', 'if-range', 'if-none-match', 'if-modified-since'];
 const HOP_BY_HOP_RESPONSE_HEADERS = new Set([
@@ -27,6 +28,16 @@ const cache = new NodeCache({ stdTTL: 600 });
 
 export function getUpstreamRequestMethod(method: string): 'GET' | 'HEAD' {
     return method === 'HEAD' ? 'HEAD' : 'GET';
+}
+
+export function getPlaylistUpstreamUrl(stream: string, proxy: string | null | undefined, mediaUrl: string): URL {
+    if (proxy && isHLSPath(proxy)) {
+        return new URL(proxy);
+    }
+
+    const url = new URL(`${stream}/index.m3u8`, mediaUrl);
+    url.port = '8888';
+    return url;
 }
 
 type AbortAwareEmitter = {
@@ -160,14 +171,7 @@ export default async function router(schema: Schema, config: Config) {
                 res.send(newM3U8);
             } else {
                 const cloudtakPath = await getCloudTAKPath(config, req.params.stream);
-
-                let url: URL;
-                if (!cloudtakPath.proxy) {
-                    url = new URL(`${req.params.stream}/index.m3u8`, config.CLOUDTAK_Config_media_url);
-                    url.port = '8888';
-                } else {
-                    url = new URL(cloudtakPath.proxy);
-                }
+                const url = getPlaylistUpstreamUrl(req.params.stream, cloudtakPath.proxy, config.CLOUDTAK_Config_media_url);
 
                 const headers = getProxyRequestHeaders(req.headers);
                 const method = getUpstreamRequestMethod(req.method);

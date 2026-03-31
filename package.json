@@ -29,7 +29,6 @@
         "@openaddresses/cloudfriend": "^7.0.0",
         "@openaddresses/deploy": "^9.1.0",
         "@sinclair/typebox": "^0.34.41",
-        "axios": "^1.13.2",
         "cors": "^2.8.5",
         "jsonwebtoken": "^9.0.2",
         "m3u8-parser": "^7.2.0",
