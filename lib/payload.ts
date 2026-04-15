@@ -1,4 +1,4 @@
-import { Static } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
 import { CloudTAKRemotePath, Path } from './types.js';
 
 export function isHLSPath(source: string | null | undefined): boolean {

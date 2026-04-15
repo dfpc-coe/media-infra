@@ -4,7 +4,7 @@ import { managementToken } from './auth.js';
 import { fetch } from 'undici';
 import { CloudTAKRemotePath, CloudTAKRemotePaths, Path } from './types.js';
 import { createPayload, isHLSPath } from './payload.js';
-import { Static } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
 import cron from 'node-cron';
 
 export async function schedule(config: Config) {

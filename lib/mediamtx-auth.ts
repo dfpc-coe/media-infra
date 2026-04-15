@@ -1,7 +1,8 @@
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
 import NodeCache from 'node-cache';
 import { fetch } from 'undici';
-import { Static } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
 import type { Config } from './config.js';
 import { MediaMTXAuthRequest, StandardResponse } from './types.js';
 

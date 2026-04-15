@@ -19,7 +19,7 @@ export function verifySignedUrl(
     secret: string,
     path: string,
     token: string
-): { path: string; hash: string; type: string } | boolean {
+): { path: string; hash: string; type: string } | false {
     try {
         const decoded = jwt.verify(token, secret) as { path: string; hash: string; type: string };
         if (decoded.path !== path) return false;
