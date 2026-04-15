@@ -77,8 +77,9 @@ segment0.ts
         const decodedFirst = verifySignedUrl(config.SigningSecret, streamId, firstToken!);
         const decodedSecond = verifySignedUrl(config.SigningSecret, streamId, secondToken!);
 
-        assert.notEqual(decodedFirst, false);
-        assert.notEqual(decodedSecond, false);
+        if (decodedFirst === false || decodedSecond === false) {
+            assert.fail('Signed URLs should verify successfully');
+        }
 
         assert.equal(decodedFirst.hash, decodedSecond.hash, 'Repeated rewrites should reuse the same hash');
         assert.deepEqual(cache.keys(), [`${streamId}-${decodedFirst.hash}`], 'Repeated rewrites should reuse the same cache entry');

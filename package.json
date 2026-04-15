@@ -23,11 +23,11 @@
     },
     "homepage": "https://github.com/dfpc-code/media-infra#readme",
     "dependencies": {
-        "@openaddresses/batch-alarms": "^4.0.0",
+        "@openaddresses/batch-alarms": "^5.0.0",
         "@openaddresses/batch-error": "^2.13.1",
         "@openaddresses/batch-schema": "^10.19.0",
         "@openaddresses/cloudfriend": "^7.0.0",
-        "@openaddresses/deploy": "^9.1.0",
+        "@openaddresses/deploy": "^10.0.0",
         "@sinclair/typebox": "^0.34.41",
         "cors": "^2.8.5",
         "jsonwebtoken": "^9.0.2",
@@ -35,7 +35,7 @@
         "node-cache": "^5.1.2",
         "node-cron": "^4.0.0",
         "tsx": "^4.19.2",
-        "undici": "^7.16.0",
+        "undici": "^8.0.0",
         "uuid": "^13.0.0"
     },
     "devDependencies": {
@@ -45,7 +45,7 @@
         "@types/node": "^25.0.0",
         "eslint": "^10.0.0",
         "eslint-plugin-n": "^17.10.2",
-        "typescript": "^5.6.3",
+        "typescript": "^6.0.0",
         "typescript-eslint": "^8.12.2"
     }
 }
