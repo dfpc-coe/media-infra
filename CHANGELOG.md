@@ -12,7 +12,11 @@
 
 ### Pending Release
 
-### v9.2.1 - 2026-23
+### v9.3.0 - 2026-04-15
+
+- :arrow_up: Update to Typescript 6.0
+
+### v9.2.1 - 2026-03-23
 
 - :rocket: Remove `-Service` postfix from ECS Service Name
 
