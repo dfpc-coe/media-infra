@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.4.0 - 2026-04-28
+
+- :arrow_up: Update MediaMTX to 1.18
+
 ### v9.3.0 - 2026-04-15
 
 - :arrow_up: Update to Typescript 6.0
