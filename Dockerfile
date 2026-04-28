@@ -1,5 +1,5 @@
 ARG MEDIAMTX_REPO=https://github.com/bluenviron/mediamtx.git
-ARG MEDIAMTX_BRANCH=v1.17.0
+ARG MEDIAMTX_BRANCH=v1.18.0
 
 # Build Stage
 FROM golang:1.25-alpine AS builder
