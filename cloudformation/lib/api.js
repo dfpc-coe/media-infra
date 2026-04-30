@@ -494,9 +494,9 @@ export default cf.merge({
             Default: 't4g.xlarge'
         },
         ECSOptimizedAMI: {
-            Description: 'ARM64 ECS-optimized Amazon Linux 2 AMI ID',
+            Description: 'ARM64 ECS-optimized Amazon Linux 2023 AMI ID',
             Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>',
-            Default: '/aws/service/ecs/optimized-ami/amazon-linux-2/arm64/recommended/image_id'
+            Default: '/aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id'
         },
         LogLevel: {
             Description: 'Log Level for MediaMTX',

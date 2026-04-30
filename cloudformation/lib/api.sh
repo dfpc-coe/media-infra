@@ -9,30 +9,15 @@ EOF
 
 systemctl enable --now docker
 systemctl enable ecs
-
-for attempt in {1..30}; do
-    if systemctl restart ecs && systemctl is-active --quiet ecs; then
-        echo "ECS agent successfully started and is active."
-        break
-    fi
-
-    echo "Attempt $attempt: ECS agent not active yet. Retrying in 10 seconds..."
-    sleep 10
-done
-
-if ! systemctl is-active --quiet ecs; then
-    echo "ERROR: ECS agent failed to start after 30 attempts."
-
-    # Print status and logs to help troubleshoot via /var/log/cloud-init-output.log
-    systemctl status ecs --no-pager || true
-    journalctl -u ecs -b --no-pager || true
-
-    # Exit with a failure code to signal the deployment/Auto Scaling lifecycle hook
-    exit 1
-fi
+systemctl start --no-block ecs
+echo "ECS agent start queued; ecs.service will run after cloud-final.service completes."
 
 if ! command -v aws >/dev/null 2>&1; then
-    yum install -y awscli || true
+    if command -v dnf >/dev/null 2>&1; then
+        dnf install -y awscli || true
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y awscli || true
+    fi
 fi
 
 if ! command -v aws >/dev/null 2>&1; then
