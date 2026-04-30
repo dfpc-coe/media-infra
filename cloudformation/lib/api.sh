@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
 
-cat <<'EOF' >> /etc/ecs/ecs.config
-ECS_CLUSTER=your-ecs-cluster-name
+cat <<'EOF' > /etc/ecs/ecs.config
+ECS_CLUSTER=${ClusterName}
 ECS_ENABLE_CONTAINER_METADATA=true
 ECS_ENABLE_SPOT_INSTANCE_DRAINING=true
 EOF
