@@ -1,21 +1,22 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Add MediaConfig File
 #
 
-set -euo pipefail
+set -eu
 
 LOGLEVEL=${LOG_LEVEL:-info}
 
 AUTH_ADDRESS="http://127.0.0.1:9997/auth"
 
-if [[ "$API_URL" == *"localhost"* && "${CLOUDTAK_Mode:-}" == "docker-compose" ]]; then
-  export API_URL="${API_URL/localhost/api}"
+if [ "${CLOUDTAK_Mode:-}" = "docker-compose" ] && printf '%s' "$API_URL" | grep -q 'localhost'; then
+  API_URL=$(printf '%s' "$API_URL" | sed 's/localhost/api/')
+  export API_URL
 fi
 
-yq -i ".authHTTPAddress = \"$AUTH_ADDRESS\"" /mediamtx.yml
-yq -i ".logLevel = \"$LOGLEVEL\"" /mediamtx.yml
+sed -i "s|^authHTTPAddress: .*|authHTTPAddress: ${AUTH_ADDRESS}|" /mediamtx.yml
+sed -i "s|^logLevel: .*|logLevel: ${LOGLEVEL}|" /mediamtx.yml
 
-npx tsx index.ts &
+node /dist/index.js &
 
-/mediamtx /mediamtx.yml
+exec /mediamtx /mediamtx.yml

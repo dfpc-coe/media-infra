@@ -1,26 +1,26 @@
-ARG MEDIAMTX_REPO=https://github.com/bluenviron/mediamtx.git
-ARG MEDIAMTX_BRANCH=v1.18.0
+ARG BUILDPLATFORM
 
-# Build Stage
-FROM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:24-alpine AS app-builder
 
-ARG MEDIAMTX_REPO
-ARG MEDIAMTX_BRANCH
+WORKDIR /app
 
-RUN apk add --no-cache git make
+COPY package.json package-lock.json tsconfig.json ./
+RUN npm ci
 
-WORKDIR /build
-RUN git clone ${MEDIAMTX_REPO} . \
-    && git checkout ${MEDIAMTX_BRANCH} \
-    && case "${MEDIAMTX_REPO}" in *bluenviron/mediamtx*) ;; *) echo "v0.0.0-custom" > internal/core/VERSION ;; esac \
-    && go generate ./... \
-    && go build -o /mediamtx .
+COPY index.ts ./
+COPY lib/ ./lib/
+COPY routes/ ./routes/
+
+RUN npm run build \
+    && npm prune --omit=dev
+
+FROM node:24-alpine AS node-runtime
 
 # Final Stage
-FROM bluenviron/mediamtx:1.17.0-ffmpeg
+FROM bluenviron/mediamtx:1.18.1-ffmpeg
 
-# Copy custom binary
-COPY --from=builder /mediamtx /mediamtx
+# Copy a target-platform Node runtime without executing package-manager steps
+COPY --from=node-runtime /usr/local/ /usr/local/
 
 # SRT
 EXPOSE 8890
@@ -40,19 +40,11 @@ EXPOSE 9996
 # HLS
 EXPOSE 8888
 
-
-RUN apk add --no-cache bash vim yq nodejs npm
-
 COPY mediamtx.yml /
 COPY start /
 
 COPY package.json /
-COPY package-lock.json /
-
-RUN npm install
-
-COPY index.ts /
-COPY lib/ /lib/
-COPY routes/ /routes/
+COPY --from=app-builder /app/node_modules /node_modules
+COPY --from=app-builder /app/dist /dist
 
 ENTRYPOINT [ "/start" ]
