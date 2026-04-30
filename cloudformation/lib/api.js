@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import { URL } from 'node:url';
 import cf from '@openaddresses/cloudfriend';
 
 const PORTS = [{
@@ -5,85 +7,114 @@ const PORTS = [{
     Port: 9997,
     Protocol: 'tcp',
     Description: 'HTTP API/HLS',
-    Certificate: true,
     Enabled: true
 },{
     Name: 'Playback',
     Port: 9996,
     Protocol: 'tcp',
     Description: 'Playback Protocol',
-    Certificate: true,
     Enabled: true
 },{
     Name: 'RTSP',
     Port: 8554,
     Protocol: 'tcp',
     Description: 'RTSP Protocol',
-    Certificate: false,
     Enabled: true
 },{
     Name: 'RTSPS',
     Port: 8322,
     Protocol: 'tcp',
     Description: 'RTSPS Protocol',
-    Certificate: false,
     Enabled: false
 },{
     Name: 'RTMP',
     Port: 1935,
     Protocol: 'tcp',
     Description: 'RTMP Protocol',
-    Certificate: false,
     Enabled: true
 },{
     Name: 'RTMPS',
     Port: 1936,
     Protocol: 'tcp',
     Description: 'RTMPS Protocol',
-    Certificate: false,
     Enabled: false
 },{
     Name: 'HLS',
     Port: 8888,
     Protocol: 'tcp',
     Description: 'HLS Protocol',
-    Certificate: true,
     Enabled: true
 },{
     Name: 'WEBRTC',
     Port: 8889,
     Protocol: 'tcp',
     Description: 'WebRTC Protocol',
-    Certificate: false,
     Enabled: false
 },{
     Name: 'SRT',
     Port: 8890,
     Protocol: 'udp',
     Description: 'SRT Protocol',
-    Certificate: false,
-    Enabled: true,
-
-    // UDP Health checks fallback to TCP
-    HealthCheckPort: 9997,
-    HealthCheckProtocol: 'tcp'
+    Enabled: true
 }].filter((p) => {
     return p.Enabled;
 });
 
+const clusterName = cf.join(['tak-vpc-', cf.ref('Environment'), '-media']);
+const image = cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]);
+const userData = fs.readFileSync(new URL('./api.sh', import.meta.url), 'utf8');
+
+const containerEnvironment = [
+    { Name: 'StackName', Value: cf.stackName },
+    { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
+    { Name: 'Environment', Value: cf.ref('Environment') },
+    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
+    { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
+    { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
+    { Name: 'AWS_REGION', Value: cf.region }
+];
+
+const portMappings = PORTS.map((port) => {
+    return {
+        ContainerPort: port.Port,
+        HostPort: port.Port,
+        Protocol: port.Protocol
+    };
+});
+
+function containerDefinition(name) {
+    return {
+        Name: name,
+        Image: image,
+        MountPoints: [{
+            ContainerPath: '/opt/mediamtx',
+            SourceVolume: cf.stackName
+        }],
+        PortMappings: portMappings,
+        Environment: containerEnvironment,
+        LogConfiguration: {
+            LogDriver: 'awslogs',
+            Options: {
+                'awslogs-group': cf.stackName,
+                'awslogs-region': cf.region,
+                'awslogs-stream-prefix': cf.stackName,
+                'awslogs-create-group': true
+            }
+        },
+        Essential: true
+    };
+}
+
 const Resources = {
-    ELBDNS: {
+    MediaDNSRecord: {
         Type: 'AWS::Route53::RecordSet',
         Properties: {
             HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
             Type : 'A',
             Name: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
             Comment: cf.join(' ', [cf.stackName, 'DNS Entry']),
-            AliasTarget: {
-                DNSName: cf.getAtt('ELB', 'DNSName'),
-                EvaluateTargetHealth: true,
-                HostedZoneId: cf.getAtt('ELB', 'CanonicalHostedZoneID')
-            }
+            TTL: '60',
+            ResourceRecords: [cf.ref('ELBEIPSubnetA')]
         }
     },
     Logs: {
@@ -91,6 +122,16 @@ const Resources = {
         Properties: {
             LogGroupName: cf.stackName,
             RetentionInDays: 7
+        }
+    },
+    MediaCluster: {
+        Type: 'AWS::ECS::Cluster',
+        Properties: {
+            ClusterName: clusterName,
+            ClusterSettings: [{
+                Name: 'containerInsights',
+                Value: 'enhanced'
+            }]
         }
     },
     ELBEIPSubnetA: {
@@ -102,45 +143,18 @@ const Resources = {
             }]
         }
     },
-    ELB: {
-        Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
-        DependsOn: ['ELBEIPSubnetA'],
+    ServiceSecurityGroup: {
+        Type: 'AWS::EC2::SecurityGroup',
         Properties: {
-            Name: cf.stackName,
-            Type: 'network',
-            Scheme: 'internet-facing',
-            // Disabled as DualStack currently does not support IPv6 UDP
-            // ref: https://docs.aws.amazon.com/whitepapers/latest/ipv6-on-aws/scaling-the-dual-stack-network-design-in-aws.html
-            // EnablePrefixForIpv6SourceNat: 'on',
-            // IpAddressType: 'dualstack',
-            SecurityGroups: [cf.ref('ELBSecurityGroup')],
-            LoadBalancerAttributes: [{
-                Key: 'access_logs.s3.enabled',
-                Value: true
-            },{
-                Key: 'access_logs.s3.bucket',
-                Value: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-bucket']))
-            },{
-                Key: 'access_logs.s3.prefix',
-                Value: cf.stackName
-            }],
-            SubnetMappings: [{
-                AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
-                SubnetId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a']))
-            }]
-        }
-    },
-    ELBSecurityGroup: {
-        Type : 'AWS::EC2::SecurityGroup',
-        Properties : {
             Tags: [{
                 Key: 'Name',
-                Value: cf.join('-', [cf.stackName, 'elb-sg'])
+                Value: cf.join('-', [cf.stackName, 'ec2-sg'])
             }],
-            GroupName: cf.join('-', [cf.stackName, 'elb-sg']),
-            GroupDescription: 'Allow Access to ELB',
+            GroupName: cf.join('-', [cf.stackName, 'ec2-sg']),
+            GroupDescription: 'Allow direct access to Media ports',
             SecurityGroupIngress: PORTS.map((port) => {
                 return {
+                    Description: port.Description,
                     CidrIp: '0.0.0.0/0',
                     IpProtocol: port.Protocol,
                     FromPort: port.Port,
@@ -150,14 +164,161 @@ const Resources = {
             VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
         }
     },
+    ContainerInstanceRole: {
+        Type: 'AWS::IAM::Role',
+        Properties: {
+            AssumeRolePolicyDocument: {
+                Version: '2012-10-17',
+                Statement: [{
+                    Effect: 'Allow',
+                    Principal: {
+                        Service: 'ec2.amazonaws.com'
+                    },
+                    Action: 'sts:AssumeRole'
+                }]
+            },
+            Policies: [{
+                PolicyName: cf.join('-', [cf.stackName, 'eip-association']),
+                PolicyDocument: {
+                    Statement: [{
+                        Effect: 'Allow',
+                        Action: [
+                            'ec2:AssociateAddress',
+                            'ec2:DescribeAddresses',
+                            'ec2:DescribeInstances'
+                        ],
+                        Resource: '*'
+                    }]
+                }
+            }],
+            ManagedPolicyArns: [
+                cf.join(['arn:', cf.partition, ':iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role']),
+                cf.join(['arn:', cf.partition, ':iam::aws:policy/AmazonSSMManagedInstanceCore'])
+            ],
+            Path: '/service-role/'
+        }
+    },
+    ContainerInstanceProfile: {
+        Type: 'AWS::IAM::InstanceProfile',
+        Properties: {
+            Path: '/service-role/',
+            Roles: [cf.ref('ContainerInstanceRole')]
+        }
+    },
+    MediaLaunchTemplate: {
+        Type: 'AWS::EC2::LaunchTemplate',
+        Properties: {
+            LaunchTemplateName: cf.stackName,
+            LaunchTemplateData: {
+                ImageId: cf.ref('ECSOptimizedAMI'),
+                InstanceType: cf.ref('InstanceType'),
+                IamInstanceProfile: {
+                    Arn: cf.getAtt('ContainerInstanceProfile', 'Arn')
+                },
+                MetadataOptions: {
+                    HttpEndpoint: 'enabled',
+                    HttpTokens: 'required'
+                },
+                NetworkInterfaces: [{
+                    DeviceIndex: 0,
+                    AssociatePublicIpAddress: true,
+                    Groups: [cf.ref('ServiceSecurityGroup')]
+                }],
+                UserData: {
+                    'Fn::Base64': {
+                        'Fn::Sub': [
+                            userData,
+                            {
+                                AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
+                                ClusterName: clusterName
+                            }
+                        ]
+                    }
+                },
+                TagSpecifications: [{
+                    ResourceType: 'instance',
+                    Tags: [{
+                        Key: 'Name',
+                        Value: cf.stackName
+                    }]
+                }]
+            }
+        }
+    },
+    MediaAutoScalingGroup: {
+        Type: 'AWS::AutoScaling::AutoScalingGroup',
+        Properties: {
+            AutoScalingGroupName: cf.stackName,
+            DesiredCapacity: '0',
+            MinSize: '0',
+            MaxSize: '1',
+            HealthCheckGracePeriod: 300,
+            HealthCheckType: 'EC2',
+            VPCZoneIdentifier: [
+                cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-b']))
+            ],
+            LaunchTemplate: {
+                LaunchTemplateId: cf.ref('MediaLaunchTemplate'),
+                Version: cf.getAtt('MediaLaunchTemplate', 'LatestVersionNumber')
+            },
+            Tags: [{
+                Key: 'Name',
+                Value: cf.stackName,
+                PropagateAtLaunch: true
+            },{
+                Key: 'AmazonECSManaged',
+                Value: 'true',
+                PropagateAtLaunch: true
+            }]
+        }
+    },
+    MediaCapacityProvider: {
+        Type: 'AWS::ECS::CapacityProvider',
+        Properties: {
+            Name: cf.stackName,
+            AutoScalingGroupProvider: {
+                AutoScalingGroupArn: cf.ref('MediaAutoScalingGroup'),
+                ManagedScaling: {
+                    Status: 'ENABLED',
+                    TargetCapacity: 100,
+                    MinimumScalingStepSize: 1,
+                    MaximumScalingStepSize: 1,
+                    InstanceWarmupPeriod: 300
+                },
+                ManagedTerminationProtection: 'DISABLED'
+            },
+            Tags: [{
+                Key: 'Name',
+                Value: cf.stackName
+            }]
+        }
+    },
+    MediaClusterCapacityProviderAssociation: {
+        Type: 'AWS::ECS::ClusterCapacityProviderAssociations',
+        Properties: {
+            Cluster: cf.ref('MediaCluster'),
+            CapacityProviders: [
+                cf.ref('MediaCapacityProvider')
+            ],
+            DefaultCapacityProviderStrategy: [{
+                CapacityProvider: cf.ref('MediaCapacityProvider'),
+                Weight: 1
+            }]
+        }
+    },
     ServiceTaskDefinition: {
         Type: 'AWS::ECS::TaskDefinition',
         Properties: {
             Family: cf.join([cf.stackName, '-service']),
             Cpu: cf.ref('ComputeCpus'),
             Memory: cf.ref('ComputeMemory'),
-            NetworkMode: 'awsvpc',
-            RequiresCompatibilities: ['FARGATE'],
+            NetworkMode: 'host',
+            RequiresCompatibilities: ['EC2'],
+            RuntimePlatform: {
+                CpuArchitecture: 'ARM64',
+                OperatingSystemFamily: 'LINUX'
+            },
             Tags: [{
                 Key: 'Name',
                 Value: cf.join('-', [cf.stackName, 'api'])
@@ -170,39 +331,7 @@ const Resources = {
                     FilesystemId: cf.ref('EFSFileSystem')
                 }
             }],
-            ContainerDefinitions: [{
-                Name: 'api',
-                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
-                MountPoints: [{
-                    ContainerPath: '/opt/mediamtx',
-                    SourceVolume: cf.stackName
-                }],
-                PortMappings: PORTS.map((port) => {
-                    return {
-                        ContainerPort: port.Port,
-                        Protocol: port.Protocol
-                    };
-                }),
-                Environment: [
-                    { Name: 'StackName', Value: cf.stackName },
-                    { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
-                    { Name: 'Environment', Value: cf.ref('Environment') },
-                    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
-                    { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
-                    { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
-                    { Name: 'AWS_REGION', Value: cf.region }
-                ],
-                LogConfiguration: {
-                    LogDriver: 'awslogs',
-                    Options: {
-                        'awslogs-group': cf.stackName,
-                        'awslogs-region': cf.region,
-                        'awslogs-stream-prefix': cf.stackName,
-                        'awslogs-create-group': true
-                    }
-                },
-                Essential: true
-            }]
+            ContainerDefinitions: [containerDefinition('api')]
         }
     },
     /**
@@ -215,8 +344,12 @@ const Resources = {
             Family: cf.join([cf.stackName, '-task']),
             Cpu: 1024,
             Memory: 4096 * 2,
-            NetworkMode: 'awsvpc',
-            RequiresCompatibilities: ['FARGATE'],
+            NetworkMode: 'host',
+            RequiresCompatibilities: ['EC2'],
+            RuntimePlatform: {
+                CpuArchitecture: 'ARM64',
+                OperatingSystemFamily: 'LINUX'
+            },
             Tags: [{
                 Key: 'Name',
                 Value: cf.join('-', [cf.stackName, 'api'])
@@ -225,13 +358,8 @@ const Resources = {
             TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
             ContainerDefinitions: [{
                 Name: 'task',
-                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
-                PortMappings: PORTS.map((port) => {
-                    return {
-                        ContainerPort: port.Port,
-                        Protocol: port.Protocol
-                    };
-                }),
+                Image: image,
+                PortMappings: portMappings,
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
@@ -324,91 +452,29 @@ const Resources = {
     },
     Service: {
         Type: 'AWS::ECS::Service',
-        DependsOn: PORTS.map((p) => { return `Listener${p.Name}`; }),
+        DependsOn: [
+            'MediaClusterCapacityProviderAssociation',
+            'EFSMountTargetSubnetA',
+            'EFSMountTargetSubnetB'
+        ],
         Properties: {
             ServiceName: cf.stackName,
-            Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
+            Cluster: cf.ref('MediaCluster'),
             TaskDefinition: cf.ref('ServiceTaskDefinition'),
-            LaunchType: 'FARGATE',
+            CapacityProviderStrategy: [{
+                CapacityProvider: cf.ref('MediaCapacityProvider'),
+                Weight: 1
+            }],
             PropagateTags: 'SERVICE',
             EnableExecuteCommand: cf.ref('EnableExecute'),
             DesiredCount: 1,
-            NetworkConfiguration: {
-                AwsvpcConfiguration: {
-                    AssignPublicIp: 'ENABLED',
-                    SecurityGroups: [cf.ref('ServiceSecurityGroup')],
-                    Subnets:  [
-                        cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a']))
-                    ]
-                }
-            },
-            LoadBalancers: PORTS.map((p) => {
-                return {
-                    ContainerName: 'api',
-                    ContainerPort: p.Port,
-                    TargetGroupArn: cf.ref(`TargetGroup${p.Name}`)
-                };
-            })
-        }
-    },
-    ServiceSecurityGroup: {
-        Type: 'AWS::EC2::SecurityGroup',
-        Properties: {
-            Tags: [{
-                Key: 'Name',
-                Value: cf.join('-', [cf.stackName, 'ec2-sg'])
-            }],
-            GroupDescription: 'Allow access to Media ports',
-            VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
-            SecurityGroupIngress: PORTS.map((port) => {
-                return {
-                    Description: 'ELB Traffic',
-                    SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
-                    IpProtocol: port.Protocol,
-                    FromPort: port.Port,
-                    ToPort: port.Port
-                };
-            })
+            DeploymentConfiguration: {
+                MinimumHealthyPercent: 0,
+                MaximumPercent: 100
+            }
         }
     }
 };
-
-for (const p of PORTS) {
-    Resources[`Listener${p.Name}`] = {
-        Type: 'AWS::ElasticLoadBalancingV2::Listener',
-        Properties: {
-            Certificates: p.Certificate ? [{
-                CertificateArn: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-acm']))
-            }] : [],
-            DefaultActions: [{
-                Type: 'forward',
-                TargetGroupArn: cf.ref(`TargetGroup${p.Name}`)
-            }],
-            LoadBalancerArn: cf.ref('ELB'),
-            Port: p.Port,
-            Protocol: p.Certificate && p.Protocol === 'tcp' ? 'TLS' : p.Protocol.toUpperCase()
-        }
-    };
-
-    Resources[`TargetGroup${p.Name}`] = {
-        Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
-        Properties: {
-            Port: p.Port,
-            Protocol: p.Protocol.toUpperCase(),
-            TargetType: 'ip',
-            VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
-
-            HealthCheckEnabled: true,
-            HealthCheckIntervalSeconds: 30,
-
-            // UDP Health checks fallback to TCP
-            HealthCheckPort: p.HealthCheckPort || p.Port,
-            HealthCheckProtocol: (p.HealthCheckProtocol || p.Protocol).toUpperCase(),
-            HealthCheckTimeoutSeconds: 10,
-            HealthyThresholdCount: 5
-        }
-    };
-}
 
 export default cf.merge({
     Parameters: {
@@ -417,14 +483,24 @@ export default cf.merge({
             Type: 'String'
         },
         ComputeCpus: {
-            Description: 'Fargate Compute vCPU Units',
+            Description: 'ECS task CPU units',
             Type: 'Number',
             Default: 1024
         },
         ComputeMemory: {
-            Description: 'Fargate Compute Memory in MB',
+            Description: 'ECS task memory in MB',
             Type: 'Number',
             Default: 8192
+        },
+        InstanceType: {
+            Description: 'EC2 instance type for the media ECS capacity provider',
+            Type: 'String',
+            Default: 't4g.xlarge'
+        },
+        ECSOptimizedAMI: {
+            Description: 'ARM64 ECS-optimized Amazon Linux 2 AMI ID',
+            Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>',
+            Default: '/aws/service/ecs/optimized-ami/amazon-linux-2/arm64/recommended/image_id'
         },
         LogLevel: {
             Description: 'Log Level for MediaMTX',
@@ -440,9 +516,17 @@ export default cf.merge({
         }
     },
     Outputs: {
-        SubnetAIP: {
-            Description: 'NLB EIP for Subnet A',
+        MediaIP: {
+            Description: 'Static EIP for the media EC2 instance',
             Value: cf.ref('ELBEIPSubnetA')
+        },
+        SubnetAIP: {
+            Description: 'Retained EIP originally used by the media NLB subnet A mapping',
+            Value: cf.ref('ELBEIPSubnetA')
+        },
+        CapacityProvider: {
+            Description: 'ECS capacity provider used by the media service',
+            Value: cf.ref('MediaCapacityProvider')
         }
     },
     Resources

@@ -1,6 +1,6 @@
 services:
   mediamtx:
-    platform: linux/amd64
+    platform: ${DOCKER_PLATFORM:-linux/arm64}
     build: .
     restart: always
     environment:
