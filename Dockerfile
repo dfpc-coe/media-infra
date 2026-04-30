@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci
 
-COPY index.ts lib/ routes/ ./
+COPY . .
 
 RUN npm run build \
     && npm prune --omit=dev
