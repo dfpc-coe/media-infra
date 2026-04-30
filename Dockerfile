@@ -1,20 +1,16 @@
 ARG BUILDPLATFORM
 
-FROM --platform=$BUILDPLATFORM node:24-alpine AS app-builder
+FROM --platform=$BUILDPLATFORM node:24-alpine AS node-runtime
 
 WORKDIR /app
 
 COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci
 
-COPY index.ts ./
-COPY lib/ ./lib/
-COPY routes/ ./routes/
+COPY index.ts lib/ routes/ ./
 
 RUN npm run build \
     && npm prune --omit=dev
-
-FROM node:24-alpine AS node-runtime
 
 # Final Stage
 FROM bluenviron/mediamtx:1.18.1-ffmpeg
@@ -43,8 +39,8 @@ EXPOSE 8888
 COPY mediamtx.yml /
 COPY start /
 
-COPY package.json /
-COPY --from=app-builder /app/node_modules /node_modules
-COPY --from=app-builder /app/dist /dist
+COPY --from=node-runtime /app/node_modules /node_modules
+COPY --from=node-runtime /app/dist /dist
+COPY package.json /dist/package.json
 
 ENTRYPOINT [ "/start" ]
