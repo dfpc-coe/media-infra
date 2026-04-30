@@ -60,10 +60,6 @@ const PORTS = [{
     return p.Enabled;
 });
 
-const clusterName = cf.join(['tak-vpc-', cf.ref('Environment'), '-media']);
-const image = cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]);
-const userData = fs.readFileSync(new URL('./api.sh', import.meta.url), 'utf8');
-
 const containerEnvironment = [
     { Name: 'StackName', Value: cf.stackName },
     { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
@@ -85,7 +81,7 @@ const portMappings = PORTS.map((port) => {
 function containerDefinition(name) {
     return {
         Name: name,
-        Image: image,
+        Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
         MountPoints: [{
             ContainerPath: '/opt/mediamtx',
             SourceVolume: cf.stackName
@@ -127,7 +123,7 @@ const Resources = {
     MediaCluster: {
         Type: 'AWS::ECS::Cluster',
         Properties: {
-            ClusterName: clusterName,
+            ClusterName: cf.join(['tak-vpc-', cf.ref('Environment'), '-media']),
             ClusterSettings: [{
                 Name: 'containerInsights',
                 Value: 'enhanced'
@@ -227,10 +223,10 @@ const Resources = {
                 UserData: {
                     'Fn::Base64': {
                         'Fn::Sub': [
-                            userData,
+                            fs.readFileSync(new URL('./api.sh', import.meta.url), 'utf8'),
                             {
                                 AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
-                                ClusterName: clusterName
+                                ClusterName: cf.join(['tak-vpc-', cf.ref('Environment'), '-media'])
                             }
                         ]
                     }
@@ -358,7 +354,7 @@ const Resources = {
             TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
             ContainerDefinitions: [{
                 Name: 'task',
-                Image: image,
+                Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-cloudtak-media:', cf.ref('GitSha')]),
                 PortMappings: portMappings,
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
