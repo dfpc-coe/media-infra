@@ -237,6 +237,12 @@ const Resources = {
                         Key: 'Name',
                         Value: cf.stackName
                     }]
+                },{
+                    ResourceType: 'volume',
+                    Tags: [{
+                        Key: 'Name',
+                        Value: cf.stackName
+                    }]
                 }]
             }
         }
@@ -245,9 +251,9 @@ const Resources = {
         Type: 'AWS::AutoScaling::AutoScalingGroup',
         Properties: {
             AutoScalingGroupName: cf.stackName,
-            DesiredCapacity: '0',
-            MinSize: '0',
-            MaxSize: '1',
+            DesiredCapacity: '1',
+            MinSize: '1',
+            MaxSize: '2',
             HealthCheckGracePeriod: 300,
             HealthCheckType: 'EC2',
             VPCZoneIdentifier: [
@@ -465,8 +471,8 @@ const Resources = {
             EnableExecuteCommand: cf.ref('EnableExecute'),
             DesiredCount: 1,
             DeploymentConfiguration: {
-                MinimumHealthyPercent: 0,
-                MaximumPercent: 100
+                MinimumHealthyPercent: 100,
+                MaximumPercent: 200
             }
         }
     }

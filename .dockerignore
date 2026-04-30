@@ -1,0 +1,8 @@
+.git
+.github
+.deploy
+node_modules
+dist
+coverage
+docs
+npm-debug.log
