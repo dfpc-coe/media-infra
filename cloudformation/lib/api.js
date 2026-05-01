@@ -57,6 +57,12 @@ const PORTS = [{
     Description: 'WebRTC ICE UDP Protocol',
     Enabled: true
 },{
+    Name: 'WEBRTC-ICE-TCP',
+    Port: 8189,
+    Protocol: 'tcp',
+    Description: 'WebRTC ICE TCP fallback Protocol',
+    Enabled: true
+},{
     Name: 'SRT',
     Port: 8890,
     Protocol: 'udp',

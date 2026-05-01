@@ -42,6 +42,7 @@ EXPOSE 8888
 
 # WebRTC
 EXPOSE 8889
+EXPOSE 8189
 EXPOSE 8189/udp
 
 COPY mediamtx.yml /

@@ -13,12 +13,13 @@ persistance script that will convert the API response and push it to the mediamt
 | ---- | ----- |
 | 8554 | RTSP `rtsp://<server>:8554/<mystream>` |
 | 8889 | WebRTC signaling `https://<server>:8889/<mystream>/publish` when ACM is configured, otherwise `http://<server>:8889/<mystream>/publish` |
-| 8189/udp | WebRTC ICE media transport |
+| 8189/udp | Preferred WebRTC ICE media transport |
+| 8189/tcp | WebRTC ICE fallback transport for clients that cannot use UDP |
 | 8890 | SRT `srt://localhost:8890?streamid=publish:mystream&pkt_size=1316` |
 
 ## Near-Realtime WebRTC
 
-For browser WebRTC playback, the signaling port (`8889/tcp`) and ICE media port (`8189/udp`) both need to be reachable from the client. AWS deployments use a static EIP and publish the `video.<zone>` hostname as the public ICE candidate; interface-local addresses are not advertised because clients outside the VPC cannot use them.
+For browser WebRTC playback, the signaling port (`8889/tcp`) and preferred ICE media port (`8189/udp`) both need to be reachable from the client. AWS deployments also expose direct ICE over `8189/tcp` as a fallback for clients or networks that block UDP. AWS deployments use a static EIP and publish the `video.<zone>` hostname as the public ICE candidate; interface-local addresses are not advertised because clients outside the VPC cannot use them.
 
 The source stream also needs to be browser-WebRTC friendly. MediaMTX packetizes streams but does not transcode direct RTMP publishers. Use H264 constrained baseline or baseline with no B-frames, a normal live frame rate such as 30 fps, and Opus/G711 audio or no audio. For FFmpeg publishers, a safe starting point is:
 
