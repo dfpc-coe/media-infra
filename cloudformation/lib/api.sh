@@ -25,15 +25,16 @@ if ! command -v aws >/dev/null 2>&1; then
     exit 0
 fi
 
-wait_for_tcp_port() {
-    local host="$1"
-    local port="$2"
+cat <<'EOF' > /usr/local/bin/media-eip-association.sh
+#!/bin/bash
+set -euo pipefail
 
-    timeout 1 bash -c "</dev/tcp/${host}/${port}" >/dev/null 2>&1
+wait_for_tcp_port() {
+    timeout 1 bash -c 'exec 3<>"/dev/tcp/$1/$2"' _ "$1" "$2" >/dev/null 2>&1
 }
 
-TOKEN=$(curl --fail --silent --show-error --request PUT "http://169.254.169.254/latest/api/token" --header "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-INSTANCE_ID=$(curl --fail --silent --show-error --header "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/meta-data/instance-id")
+token=$(curl --fail --silent --show-error --request PUT "http://169.254.169.254/latest/api/token" --header "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+instance_id=$(curl --fail --silent --show-error --header "X-aws-ec2-metadata-token: $token" "http://169.254.169.254/latest/meta-data/instance-id")
 
 for attempt in {1..60}; do
     if ! wait_for_tcp_port 127.0.0.1 9997; then
@@ -42,7 +43,7 @@ for attempt in {1..60}; do
         continue
     fi
 
-    if aws ec2 associate-address --region ${AWS::Region} --instance-id "$INSTANCE_ID" --allocation-id ${AllocationId} --allow-reassociation; then
+    if aws ec2 associate-address --region "$1" --instance-id "$instance_id" --allocation-id "$2" --allow-reassociation; then
         exit 0
     fi
 
@@ -50,4 +51,28 @@ for attempt in {1..60}; do
 done
 
 echo "warning: failed to associate EIP after retries"
-exit 0
+exit 1
+EOF
+
+chmod 755 /usr/local/bin/media-eip-association.sh
+
+cat <<'EOF' > /etc/systemd/system/media-eip-association.service
+[Unit]
+Description=Associate media EIP after local task readiness
+Wants=network-online.target docker.service ecs.service
+After=network-online.target docker.service ecs.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/media-eip-association.sh ${AWS::Region} ${AllocationId}
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable media-eip-association.service
+systemctl start --no-block media-eip-association.service
+echo "Media EIP association service queued; user-data can exit while it waits for port 9997."
