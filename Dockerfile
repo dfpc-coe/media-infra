@@ -17,6 +17,8 @@ FROM node:24-alpine AS node-runtime
 # Final Stage
 FROM bluenviron/mediamtx:1.18.1-ffmpeg
 
+RUN apk add --no-cache aws-cli jq openssl
+
 # Copy a target-platform Node runtime without executing package-manager steps
 COPY --from=node-runtime /usr/local/ /usr/local/
 

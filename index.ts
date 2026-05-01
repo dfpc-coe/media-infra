@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
 import cors from 'cors';
 import { config } from './lib/config.js';
 import type { Config } from './lib/config.js';
@@ -8,6 +10,8 @@ import Schema from '@openaddresses/batch-schema';
 import { StandardResponse } from './lib/types.js';
 
 const pkg = JSON.parse(String(fs.readFileSync(new URL('./package.json', import.meta.url))));
+const SERVER_KEY_PATH = '/server.key';
+const SERVER_CERT_PATH = '/server.crt';
 
 process.on('uncaughtExceptionMonitor', (exception, origin) => {
     console.trace('FATAL', exception, origin);
@@ -83,14 +87,20 @@ export default async function server(config: Config): Promise<void> {
         }
     );
 
+    const tls = process.env.ACM_CERTIFICATE_ARN ? {
+        key: fs.readFileSync(SERVER_KEY_PATH),
+        cert: fs.readFileSync(SERVER_CERT_PATH)
+    } : undefined;
+    const protocol = tls ? 'https' : 'http';
+    const nodeServer = tls ? https.createServer(tls, app) : http.createServer(app);
+
     return new Promise((resolve) => {
-        app.listen(9997, () => {
+        nodeServer.listen(9997, () => {
             if (!config.silent) {
-                console.log('ok - http://localhost:9997');
+                console.log(`ok - ${protocol}://localhost:9997`);
             }
 
             return resolve();
         });
     });
 }
-

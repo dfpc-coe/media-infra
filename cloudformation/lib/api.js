@@ -67,6 +67,8 @@ const containerEnvironment = [
     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
+    { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificate') },
+    { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
     { Name: 'AWS_REGION', Value: cf.region }
 ];
 
@@ -102,6 +104,22 @@ function containerDefinition(name) {
 }
 
 const Resources = {
+    MediaCertificate: {
+        Type: 'AWS::CertificateManager::Certificate',
+        Properties: {
+            DomainName: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+            CertificateExport: 'ENABLED',
+            ValidationMethod: 'DNS',
+            DomainValidationOptions: [{
+                DomainName: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+                HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id']))
+            }],
+            Tags: [{
+                Key: 'Name',
+                Value: cf.stackName
+            }]
+        }
+    },
     MediaDNSRecord: {
         Type: 'AWS::Route53::RecordSet',
         Properties: {
@@ -441,6 +459,14 @@ const Resources = {
                     },{
                         Effect: 'Allow',
                         Action: [
+                            'acm:DescribeCertificate',
+                            'acm:ExportCertificate',
+                            'acm:GetCertificate'
+                        ],
+                        Resource: cf.ref('MediaCertificate')
+                    },{
+                        Effect: 'Allow',
+                        Action: [
                             'logs:CreateLogGroup',
                             'logs:CreateLogStream',
                             'logs:PutLogEvents',
@@ -529,6 +555,10 @@ export default cf.merge({
         CapacityProvider: {
             Description: 'ECS capacity provider used by the media service',
             Value: cf.ref('MediaCapacityProvider')
+        },
+        MediaCertificateArn: {
+            Description: 'Exportable ACM certificate ARN used by the media service',
+            Value: cf.ref('MediaCertificate')
         }
     },
     Resources
