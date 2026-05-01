@@ -1,7 +1,7 @@
-import fs from 'node:fs/promises';
 import CP from 'child_process';
 
 process.env.GITSHA = sha();
+process.env.DOCKER_PLATFORMS = process.env.DOCKER_PLATFORMS || 'linux/amd64,linux/arm64';
 
 process.env.Environment = process.env.Environment || 'prod';
 
@@ -45,10 +45,13 @@ function login() {
 
 function tak() {
     return new Promise((resolve, reject) => {
+        const image = `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com/tak-vpc-${process.env.Environment}-cloudtak-media:${process.env.GITSHA}`;
         const $ = CP.exec(`
-            docker compose build mediamtx \
-            && docker tag media-infra-mediamtx:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-$\{Environment\}-cloudtak-media:$\{GITSHA\}" \
-            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-$\{Environment\}-cloudtak-media:$\{GITSHA\}"
+            docker buildx build \
+                --platform "$\{DOCKER_PLATFORMS\}" \
+                --tag "${image}" \
+                --push \
+                .
         `, (err) => {
             if (err) return reject(err);
             return resolve();
