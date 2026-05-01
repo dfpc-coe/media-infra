@@ -23,6 +23,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.CLOUDTAK_Config_media_url) throw new Error('CLOUDTAK_Config_media_url Env Var not set');
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
+    await server(config);
+
     try {
         await sync(config);
     } catch (err) {
@@ -30,8 +32,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
 
     await schedule(config);
-
-    await server(config);
 }
 
 export default async function server(config: Config): Promise<void> {

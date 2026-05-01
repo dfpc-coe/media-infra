@@ -49,7 +49,13 @@ const PORTS = [{
     Port: 8889,
     Protocol: 'tcp',
     Description: 'WebRTC Protocol',
-    Enabled: false
+    Enabled: true
+},{
+    Name: 'WEBRTC-ICE',
+    Port: 8189,
+    Protocol: 'udp',
+    Description: 'WebRTC ICE UDP Protocol',
+    Enabled: true
 },{
     Name: 'SRT',
     Port: 8890,
@@ -66,7 +72,7 @@ const containerEnvironment = [
     { Name: 'Environment', Value: cf.ref('Environment') },
     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
-    { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
+    { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', 'video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificate') },
     { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
     { Name: 'AWS_REGION', Value: cf.region }
@@ -107,11 +113,11 @@ const Resources = {
     MediaCertificate: {
         Type: 'AWS::CertificateManager::Certificate',
         Properties: {
-            DomainName: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+            DomainName: cf.join(['video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
             CertificateExport: 'ENABLED',
             ValidationMethod: 'DNS',
             DomainValidationOptions: [{
-                DomainName: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+                DomainName: cf.join(['video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
                 HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id']))
             }],
             Tags: [{
@@ -125,7 +131,7 @@ const Resources = {
         Properties: {
             HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
             Type : 'A',
-            Name: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+            Name: cf.join(['video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
             Comment: cf.join(' ', [cf.stackName, 'DNS Entry']),
             TTL: '60',
             ResourceRecords: [cf.ref('ELBEIPSubnetA')]
@@ -506,10 +512,6 @@ const Resources = {
 
 export default cf.merge({
     Parameters: {
-        SubdomainPrefix: {
-            Description: 'Prefix of domain: ie "video" of video.example.com',
-            Type: 'String'
-        },
         ComputeCpus: {
             Description: 'ECS task CPU units',
             Type: 'Number',

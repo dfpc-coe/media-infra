@@ -16,6 +16,14 @@ if [ "${CLOUDTAK_Mode:-}" = "docker-compose" ] && printf '%s' "$API_URL" | grep 
   export API_URL
 fi
 
+if [ -n "${CLOUDTAK_Config_media_url:-}" ]; then
+  WEBRTC_HOST=$(node -e "console.log(new URL(process.env.CLOUDTAK_Config_media_url).hostname)" 2>/dev/null || true)
+
+  if [ -n "$WEBRTC_HOST" ]; then
+    export MTX_WEBRTCADDITIONALHOSTS="$WEBRTC_HOST"
+  fi
+fi
+
 sed -i "s|^authHTTPAddress: .*|authHTTPAddress: ${AUTH_ADDRESS}|" /mediamtx.yml
 sed -i "s|^logLevel: .*|logLevel: ${LOGLEVEL}|" /mediamtx.yml
 
@@ -39,6 +47,9 @@ if [ -n "${ACM_CERTIFICATE_ARN:-}" ]; then
 
   chmod 600 /server.key
   chmod 644 /server.crt
+  export MTX_WEBRTCENCRYPTION=yes
+  export MTX_WEBRTCSERVERKEY=/server.key
+  export MTX_WEBRTCSERVERCERT=/server.crt
   rm -f "$passphrase_file" "$export_file" "$encrypted_key_file"
   trap - EXIT
 fi
