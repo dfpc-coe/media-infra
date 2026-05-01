@@ -9,7 +9,7 @@ cd /
 
 LOGLEVEL=${LOG_LEVEL:-info}
 
-AUTH_ADDRESS="http://127.0.0.1:9997/auth"
+AUTH_ADDRESS="http://127.0.0.1:9995/auth"
 
 if [ "${CLOUDTAK_Mode:-}" = "docker-compose" ] && printf '%s' "$API_URL" | grep -q 'localhost'; then
   API_URL=$(printf '%s' "$API_URL" | sed 's/localhost/api/')

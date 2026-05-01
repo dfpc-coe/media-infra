@@ -12,6 +12,7 @@ import { StandardResponse } from './lib/types.js';
 const pkg = JSON.parse(String(fs.readFileSync(new URL('./package.json', import.meta.url))));
 const SERVER_KEY_PATH = '/server.key';
 const SERVER_CERT_PATH = '/server.crt';
+const INTERNAL_AUTH_PORT = 9995;
 
 process.on('uncaughtExceptionMonitor', (exception, origin) => {
     console.trace('FATAL', exception, origin);
@@ -93,14 +94,18 @@ export default async function server(config: Config): Promise<void> {
     } : undefined;
     const protocol = tls ? 'https' : 'http';
     const nodeServer = tls ? https.createServer(tls, app) : http.createServer(app);
+    const authServer = http.createServer(app);
 
     return new Promise((resolve) => {
-        nodeServer.listen(9997, () => {
-            if (!config.silent) {
-                console.log(`ok - ${protocol}://localhost:9997`);
-            }
+        authServer.listen(INTERNAL_AUTH_PORT, '127.0.0.1', () => {
+            nodeServer.listen(9997, () => {
+                if (!config.silent) {
+                    console.log(`ok - ${protocol}://localhost:9997`);
+                    console.log(`ok - http://127.0.0.1:${INTERNAL_AUTH_PORT}`);
+                }
 
-            return resolve();
+                return resolve();
+            });
         });
     });
 }
