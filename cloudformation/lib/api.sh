@@ -25,10 +25,23 @@ if ! command -v aws >/dev/null 2>&1; then
     exit 0
 fi
 
+wait_for_tcp_port() {
+    local host="$1"
+    local port="$2"
+
+    timeout 1 bash -c "</dev/tcp/${host}/${port}" >/dev/null 2>&1
+}
+
 TOKEN=$(curl --fail --silent --show-error --request PUT "http://169.254.169.254/latest/api/token" --header "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 INSTANCE_ID=$(curl --fail --silent --show-error --header "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/meta-data/instance-id")
 
-for attempt in {1..30}; do
+for attempt in {1..60}; do
+    if ! wait_for_tcp_port 127.0.0.1 9997; then
+        echo "Attempt $attempt: waiting for media API listener on 127.0.0.1:9997"
+        sleep 10
+        continue
+    fi
+
     if aws ec2 associate-address --region ${AWS::Region} --instance-id "$INSTANCE_ID" --allocation-id ${AllocationId} --allow-reassociation; then
         exit 0
     fi
