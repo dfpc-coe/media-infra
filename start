@@ -20,7 +20,14 @@ if [ -n "${CLOUDTAK_Config_media_url:-}" ]; then
   WEBRTC_HOST=$(node -e "console.log(new URL(process.env.CLOUDTAK_Config_media_url).hostname)" 2>/dev/null || true)
 
   if [ -n "$WEBRTC_HOST" ]; then
-    export MTX_WEBRTCADDITIONALHOSTS="$WEBRTC_HOST"
+    if [ -n "${MTX_WEBRTCADDITIONALHOSTS:-}" ]; then
+      case ",${MTX_WEBRTCADDITIONALHOSTS}," in
+        *",${WEBRTC_HOST},"*) ;;
+        *) export MTX_WEBRTCADDITIONALHOSTS="${MTX_WEBRTCADDITIONALHOSTS},${WEBRTC_HOST}" ;;
+      esac
+    else
+      export MTX_WEBRTCADDITIONALHOSTS="$WEBRTC_HOST"
+    fi
   fi
 fi
 

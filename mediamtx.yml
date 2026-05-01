@@ -7,6 +7,7 @@ logDestinations: [stdout]
 
 readTimeout: 30s
 writeTimeout: 30s
+udpReadBufferSize: 4194304
 
 authMethod: http
 authHTTPAddress: http://127.0.0.1:9995/auth
@@ -41,6 +42,8 @@ webrtcAddress: :8889
 webrtcEncryption: no
 webrtcAllowOrigins: ['*']
 webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: no
+webrtcAdditionalHosts: []
 
 srt: yes
 srtAddress: :8890

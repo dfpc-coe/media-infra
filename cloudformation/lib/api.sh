@@ -12,6 +12,15 @@ systemctl enable ecs
 systemctl start --no-block ecs
 echo "ECS agent start queued; ecs.service will run after cloud-final.service completes."
 
+cat <<'EOF' > /etc/sysctl.d/99-media-webrtc.conf
+net.core.rmem_max = 8388608
+net.core.rmem_default = 4194304
+net.core.wmem_max = 8388608
+net.core.wmem_default = 4194304
+EOF
+
+sysctl --system || true
+
 if ! command -v aws >/dev/null 2>&1; then
     if command -v dnf >/dev/null 2>&1; then
         dnf install -y awscli || true
