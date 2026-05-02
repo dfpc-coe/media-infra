@@ -19,23 +19,33 @@ FROM node:24-alpine AS node-runtime
 
 FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS mediamtx-builder
 
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETOS
+ARG TARGETARCH
 ARG TARGETVARIANT
 ARG MEDIAMTX_REPO
 ARG MEDIAMTX_BRANCH
 
-RUN apk add --no-cache git
+RUN apk add --no-cache file git
 
 WORKDIR /build
 RUN git clone --depth 1 --branch "${MEDIAMTX_BRANCH}" "${MEDIAMTX_REPO}" .
 RUN set -eux; \
 	echo "v0.0.0-custom" > internal/core/VERSION; \
 	go generate ./...; \
-	export CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}"; \
-	goarm="${TARGETVARIANT#v}"; \
-	if [ "${TARGETARCH}" = "arm" ] && [ -n "${goarm}" ]; then export GOARM="${goarm}"; fi; \
-	go build -tags enable_upgrade -trimpath -ldflags="-s -w" -o /mediamtx .
+	targetos="${TARGETOS:-$(go env GOOS)}"; \
+	targetarch="${TARGETARCH:-$(go env GOARCH)}"; \
+	targetvariant="${TARGETVARIANT:-}"; \
+	export CGO_ENABLED=0 GOOS="${targetos}" GOARCH="${targetarch}"; \
+	goarm="${targetvariant#v}"; \
+	if [ "${targetarch}" = "arm" ]; then export GOARM="${goarm:-7}"; fi; \
+	go build -tags enable_upgrade -trimpath -ldflags="-s -w" -o /mediamtx .; \
+	file /mediamtx; \
+	case "${targetos}/${targetarch}" in \
+		linux/amd64) file /mediamtx | grep -q 'ELF 64-bit.*x86-64' ;; \
+		linux/arm64) file /mediamtx | grep -Eq 'ELF 64-bit.*(aarch64|ARM)' ;; \
+		linux/arm) file /mediamtx | grep -q 'ELF 32-bit.*ARM' ;; \
+	esac; \
+	if [ "${targetos}" = "$(go env GOOS)" ] && [ "${targetarch}" = "$(go env GOARCH)" ]; then /mediamtx --version; fi
 
 # Final Stage
 FROM ${MEDIAMTX_BASE_IMAGE}
