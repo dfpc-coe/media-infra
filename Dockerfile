@@ -1,4 +1,7 @@
 ARG BUILDPLATFORM
+ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.18.1-ffmpeg
+ARG MEDIAMTX_REPO=https://github.com/bluenviron/mediamtx.git
+ARG MEDIAMTX_BRANCH=v1.18.1
 
 FROM --platform=$BUILDPLATFORM node:24-alpine AS app-builder
 
@@ -14,10 +17,33 @@ RUN npm prune --omit=dev
 
 FROM node:24-alpine AS node-runtime
 
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS mediamtx-builder
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG TARGETVARIANT
+ARG MEDIAMTX_REPO
+ARG MEDIAMTX_BRANCH
+
+RUN apk add --no-cache git
+
+WORKDIR /build
+RUN git clone --depth 1 --branch "${MEDIAMTX_BRANCH}" "${MEDIAMTX_REPO}" .
+RUN set -eux; \
+	echo "v0.0.0-custom" > internal/core/VERSION; \
+	go generate ./...; \
+	export CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}"; \
+	goarm="${TARGETVARIANT#v}"; \
+	if [ "${TARGETARCH}" = "arm" ] && [ -n "${goarm}" ]; then export GOARM="${goarm}"; fi; \
+	go build -tags enable_upgrade -trimpath -ldflags="-s -w" -o /mediamtx .
+
 # Final Stage
-FROM bluenviron/mediamtx:1.18.1-ffmpeg
+FROM ${MEDIAMTX_BASE_IMAGE}
 
 RUN apk add --no-cache aws-cli jq openssl
+
+# Replace the runtime image binary with the selected remote source build.
+COPY --from=mediamtx-builder /mediamtx /mediamtx
 
 # Copy a target-platform Node runtime without executing package-manager steps
 COPY --from=node-runtime /usr/local/ /usr/local/
