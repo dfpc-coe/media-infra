@@ -1,21 +1,66 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Add MediaConfig File
 #
 
-set -euo pipefail
+set -eu
+
+cd /
 
 LOGLEVEL=${LOG_LEVEL:-info}
 
-AUTH_ADDRESS="http://127.0.0.1:9997/auth"
+AUTH_ADDRESS="http://127.0.0.1:9995/auth"
 
-if [[ "$API_URL" == *"localhost"* && "${CLOUDTAK_Mode:-}" == "docker-compose" ]]; then
-  export API_URL="${API_URL/localhost/api}"
+if [ "${CLOUDTAK_Mode:-}" = "docker-compose" ] && printf '%s' "$API_URL" | grep -q 'localhost'; then
+  API_URL=$(printf '%s' "$API_URL" | sed 's/localhost/api/')
+  export API_URL
 fi
 
-yq -i ".authHTTPAddress = \"$AUTH_ADDRESS\"" /mediamtx.yml
-yq -i ".logLevel = \"$LOGLEVEL\"" /mediamtx.yml
+if [ -n "${CLOUDTAK_Config_media_url:-}" ]; then
+  WEBRTC_HOST=$(node -e "console.log(new URL(process.env.CLOUDTAK_Config_media_url).hostname)" 2>/dev/null || true)
 
-npx tsx index.ts &
+  if [ -n "$WEBRTC_HOST" ]; then
+    if [ -n "${MTX_WEBRTCADDITIONALHOSTS:-}" ]; then
+      case ",${MTX_WEBRTCADDITIONALHOSTS}," in
+        *",${WEBRTC_HOST},"*) ;;
+        *) export MTX_WEBRTCADDITIONALHOSTS="${MTX_WEBRTCADDITIONALHOSTS},${WEBRTC_HOST}" ;;
+      esac
+    else
+      export MTX_WEBRTCADDITIONALHOSTS="$WEBRTC_HOST"
+    fi
+  fi
+fi
 
-/mediamtx /mediamtx.yml
+sed -i "s|^authHTTPAddress: .*|authHTTPAddress: ${AUTH_ADDRESS}|" /mediamtx.yml
+sed -i "s|^logLevel: .*|logLevel: ${LOGLEVEL}|" /mediamtx.yml
+
+if [ -n "${ACM_CERTIFICATE_ARN:-}" ]; then
+  passphrase_file=/tmp/acm-passphrase
+  export_file=/tmp/acm-certificate.json
+  encrypted_key_file=/tmp/server.encrypted.key
+
+  trap 'rm -f "$passphrase_file" "$export_file" "$encrypted_key_file"' EXIT
+
+  openssl rand -base64 48 | tr -d '\n' > "$passphrase_file"
+
+  aws acm export-certificate \
+    --certificate-arn "$ACM_CERTIFICATE_ARN" \
+    --passphrase "fileb://${passphrase_file}" \
+    --output json > "$export_file"
+
+  jq -r '(.Certificate // "") + "\n" + (.CertificateChain // "")' "$export_file" > /server.crt
+  jq -r '.PrivateKey' "$export_file" > "$encrypted_key_file"
+  openssl pkcs8 -in "$encrypted_key_file" -out /server.key -passin "file:${passphrase_file}"
+
+  chmod 600 /server.key
+  chmod 644 /server.crt
+  export MTX_WEBRTCENCRYPTION=yes
+  export MTX_WEBRTCSERVERKEY=/server.key
+  export MTX_WEBRTCSERVERCERT=/server.crt
+  rm -f "$passphrase_file" "$export_file" "$encrypted_key_file"
+  trap - EXIT
+fi
+
+node /dist/index.js &
+
+exec /mediamtx /mediamtx.yml

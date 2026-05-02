@@ -7,9 +7,11 @@ logDestinations: [stdout]
 
 readTimeout: 30s
 writeTimeout: 30s
+writeQueueSize: 64
+udpReadBufferSize: 4194304
 
 authMethod: http
-authHTTPAddress: http://127.0.0.1:9997/auth
+authHTTPAddress: http://127.0.0.1:9995/auth
 authHTTPExclude: []
 authInternalUsers: []
 
@@ -36,10 +38,14 @@ hls: yes
 hlsAddress: :8888
 hlsEncryption: no
 
-webrtc: no
+webrtc: yes
 webrtcAddress: :8889
 webrtcEncryption: no
 webrtcAllowOrigins: ['*']
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: :8189
+webrtcIPsFromInterfaces: no
+webrtcAdditionalHosts: []
 
 srt: yes
 srtAddress: :8890
