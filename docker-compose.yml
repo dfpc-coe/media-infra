@@ -1,6 +1,6 @@
 services:
   mediamtx:
-    platform: linux/amd64
+    platform: ${DOCKER_PLATFORM:-linux/arm64}
     build: .
     restart: always
     environment:
@@ -8,3 +8,6 @@ services:
     ports:
       - 8554:8554
       - 9997:9997
+      - 8889:8889
+      - 8189:8189
+      - 8189:8189/udp

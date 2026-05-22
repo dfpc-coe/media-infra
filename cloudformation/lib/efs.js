@@ -38,7 +38,7 @@ export default {
                     Value: cf.join('-', [cf.stackName, 'vpc'])
                 }],
                 VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
-                GroupDescription: 'Allow EFS Access in Forum Task',
+                GroupDescription: 'Allow EFS Access from the media EC2 host',
                 SecurityGroupIngress: [{
                     IpProtocol: 'tcp',
                     FromPort: 2049,
