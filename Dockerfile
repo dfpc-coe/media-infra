@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM
-ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.18.1-ffmpeg
+ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.18.2-ffmpeg
 ARG MEDIAMTX_REPO=https://github.com/dfpc-coe/mediamtx.git
 ARG MEDIAMTX_BRANCH=ProfileLevelID
 
