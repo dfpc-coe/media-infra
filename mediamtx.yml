@@ -2,7 +2,7 @@
 # View: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
 # For full MediaMTX Config Options
 
-logLevel: debug
+logLevel: info
 logDestinations: [stdout]
 
 readTimeout: 30s
