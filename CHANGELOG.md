@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v9.5.0 - 2026-06-03
+
+- :arrow_up: Update MediaMTX to 1.19
+- :bug: Fix internal fetch from https to http to avoid TLS issue
+
 ### v9.4.0 - 2026-04-28
 
 - :arrow_up: Update MediaMTX to 1.18
