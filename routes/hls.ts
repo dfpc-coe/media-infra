@@ -30,14 +30,12 @@ export function getUpstreamRequestMethod(method: string): 'GET' | 'HEAD' {
     return method === 'HEAD' ? 'HEAD' : 'GET';
 }
 
-export function getPlaylistUpstreamUrl(stream: string, proxy: string | null | undefined, mediaUrl: string): URL {
+export function getPlaylistUpstreamUrl(stream: string, proxy: string | null | undefined): URL {
     if (proxy && isHLSPath(proxy)) {
         return new URL(proxy);
     }
 
-    const url = new URL(`${stream}/index.m3u8`, mediaUrl);
-    url.port = '8888';
-    return url;
+    return new URL(`http://localhost:8888/${stream}/index.m3u8`);
 }
 
 type AbortAwareEmitter = {
@@ -171,7 +169,7 @@ export default async function router(schema: Schema, config: Config) {
                 res.send(newM3U8);
             } else {
                 const cloudtakPath = await getCloudTAKPath(config, req.params.stream);
-                const url = getPlaylistUpstreamUrl(req.params.stream, cloudtakPath.proxy, config.CLOUDTAK_Config_media_url);
+                const url = getPlaylistUpstreamUrl(req.params.stream, cloudtakPath.proxy);
 
                 const headers = getProxyRequestHeaders(req.headers);
                 const method = getUpstreamRequestMethod(req.method);
