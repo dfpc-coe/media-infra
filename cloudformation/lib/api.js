@@ -256,7 +256,7 @@ const Resources = {
                         AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
                         ClusterName: cf.join(['tak-vpc-', cf.ref('Environment'), '-media'])
                     }
-                })),
+                )),
                 TagSpecifications: [{
                     ResourceType: 'instance',
                     Tags: [{
