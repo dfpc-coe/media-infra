@@ -1,15 +1,22 @@
 import fs from 'node:fs';
 import { execSync } from 'node:child_process';
+import { fetch } from 'undici';
+import jwt from 'jsonwebtoken';
 
 const LOGLEVEL = process.env.LOG_LEVEL || 'info';
 const AUTH_ADDRESS = 'http://127.0.0.1:9995/auth';
 
+// Default CoTURN listening port (coturn-infra coturn.conf listening-port)
+const COTURN_PORT = 3478;
+
 const webrtcAdditionalHosts = resolveWebRTCAdditionalHosts();
 const webrtcEncryption = configureACMCertificate();
+const coturn = await resolveCoturnConfig();
 
 const yaml = generateConfig(
     webrtcAdditionalHosts,
-    webrtcEncryption
+    webrtcEncryption,
+    coturn
 );
 
 fs.writeFileSync('/mediamtx.yml', yaml);
@@ -39,6 +46,56 @@ function resolveWebRTCAdditionalHosts(): string[] {
     }
 
     return hosts;
+}
+
+/**
+ * Fetch the CoTURN configuration from the CloudTAK Config API.
+ * Returns the TURN/STUN host and shared secret if both `coturn::url` and
+ * `coturn::secret` are set, otherwise null.
+ */
+async function resolveCoturnConfig(): Promise<{ host: string; secret: string } | null> {
+    const apiUrl = process.env.API_URL;
+    const signingSecret = process.env.SigningSecret;
+
+    if (!apiUrl || !signingSecret) return null;
+
+    try {
+        const url = new URL(apiUrl + '/api/config');
+        url.searchParams.append('keys', 'coturn::url,coturn::secret');
+
+        const token = jwt.sign(
+            { access: 'media', internal: true },
+            signingSecret,
+            { expiresIn: 120 }
+        );
+
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer etl.${token}`
+            }
+        });
+
+        if (!res.ok) {
+            console.error(`warn - Failed to fetch CoTURN config (${res.status}): ${await res.text()}`);
+            return null;
+        }
+
+        const body = await res.json() as {
+            'coturn::url'?: string;
+            'coturn::secret'?: string;
+        };
+
+        const host = (body['coturn::url'] || '').trim();
+        const secret = (body['coturn::secret'] || '').trim();
+
+        if (!host || !secret) return null;
+
+        return { host, secret };
+    } catch (err) {
+        console.error('warn - Failed to resolve CoTURN config:', err);
+        return null;
+    }
 }
 
 /**
@@ -92,8 +149,13 @@ function configureACMCertificate(): boolean {
  * - authHTTPAddress
  * - webrtcAdditionalHosts
  * - webrtcEncryption (and related server key/cert paths)
+ * - webrtcICEServers2 (when CoTURN is configured)
  */
-function generateConfig(webrtcAdditionalHosts: string[], webrtcEncryption: boolean): string {
+function generateConfig(
+    webrtcAdditionalHosts: string[],
+    webrtcEncryption: boolean,
+    coturn: { host: string; secret: string } | null
+): string {
     let config = fs.readFileSync('/mediamtx.yml', 'utf8');
 
     // Override logLevel
@@ -136,6 +198,26 @@ function generateConfig(webrtcAdditionalHosts: string[], webrtcEncryption: boole
         // Remove server key/cert paths if present
         config = config.replace(/^\s*webrtcServerKey:.*$/m, '');
         config = config.replace(/^\s*webrtcServerCert:.*$/m, '');
+    }
+
+    // Override webrtcICEServers2 with CoTURN STUN/TURN servers when configured.
+    // The TURN server requires authentication via the shared secret, which uses
+    // the MediaMTX "AUTH_SECRET" mechanism (the secret is placed in the password
+    // field) to match CoTURN's `use-auth-secret` / `static-auth-secret`.
+    if (coturn) {
+        const iceServersYAML = [
+            'webrtcICEServers2:',
+            `  - url: stun:${coturn.host}:${COTURN_PORT}`,
+            `  - url: turn:${coturn.host}:${COTURN_PORT}`,
+            '    username: AUTH_SECRET',
+            `    password: ${JSON.stringify(coturn.secret)}`,
+            '    clientOnly: false'
+        ].join('\n');
+
+        config = config.replace(
+            /^webrtcICEServers2:.*(?:\n[ \t]+-.*(?:\n[ \t]+[^-\s].*)*)*/m,
+            iceServersYAML
+        );
     }
 
     return config;
