@@ -203,18 +203,18 @@ function generateConfig(
         config = config.replace(/^\s*webrtcServerCert:.*$/m, '');
     }
 
-    // Override webrtcICEServers2 with CoTURN STUN/TURN servers when configured.
-    // The TURN server requires authentication via the shared secret, which uses
-    // the MediaMTX "AUTH_SECRET" mechanism (the secret is placed in the password
-    // field) to match CoTURN's `use-auth-secret` / `static-auth-secret`.
+    // Override webrtcICEServers2 with the CoTURN server when configured.
+    // All media is forced through TURN over TCP (?transport=tcp) for reliable
+    // traversal of restrictive networks. The TURN server requires authentication
+    // via the shared secret, which uses the MediaMTX "AUTH_SECRET" mechanism (the
+    // secret is placed in the password field) to match CoTURN's `use-auth-secret`.
     if (coturn) {
+        const turnUrl = `turn:${coturn.host}:${COTURN_PORT}?transport=tcp`;
         const iceServersYAML = [
             'webrtcICEServers2:',
-            `  - url: stun:${coturn.host}:${COTURN_PORT}`,
-            `  - url: turn:${coturn.host}:${COTURN_PORT}`,
+            `  - url: ${JSON.stringify(turnUrl)}`,
             '    username: AUTH_SECRET',
-            `    password: ${JSON.stringify(coturn.secret)}`,
-            '    clientOnly: false'
+            `    password: ${JSON.stringify(coturn.secret)}`
         ].join('\n');
 
         config = config.replace(
