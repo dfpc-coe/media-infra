@@ -52,6 +52,9 @@ function resolveWebRTCAdditionalHosts(): string[] {
  * Fetch the CoTURN configuration from the CloudTAK Config API.
  * Returns the TURN/STUN host and shared secret if both `coturn::url` and
  * `coturn::secret` are set, otherwise null.
+ *
+ * The `coturn::*` keys are admin-only, so we mint a short-lived admin user
+ * token signed with the shared SigningSecret to read them.
  */
 async function resolveCoturnConfig(): Promise<{ host: string; secret: string } | null> {
     const apiUrl = process.env.API_URL;
@@ -64,7 +67,7 @@ async function resolveCoturnConfig(): Promise<{ host: string; secret: string } |
         url.searchParams.append('keys', 'coturn::url,coturn::secret');
 
         const token = jwt.sign(
-            { access: 'media', internal: true },
+            { access: 'admin', email: 'media-infra@cloudtak.internal' },
             signingSecret,
             { expiresIn: 120 }
         );
@@ -72,7 +75,7 @@ async function resolveCoturnConfig(): Promise<{ host: string; secret: string } |
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                Authorization: `Bearer etl.${token}`
+                Authorization: `Bearer ${token}`
             }
         });
 
