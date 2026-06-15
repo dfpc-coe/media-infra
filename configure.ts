@@ -212,6 +212,7 @@ function generateConfig(
         const turnUrl = `turn:${coturn.host}:${COTURN_PORT}?transport=tcp`;
         const iceServersYAML = [
             'webrtcICEServers2:',
+            `  - url: stun:${coturn.host}:${COTURN_PORT}`,
             `  - url: ${JSON.stringify(turnUrl)}`,
             '    username: AUTH_SECRET',
             `    password: ${JSON.stringify(coturn.secret)}`
