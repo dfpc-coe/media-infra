@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM
-ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.19.0-ffmpeg
+ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.19.1-ffmpeg
 ARG MEDIAMTX_REPO=https://github.com/bluenviron/mediamtx.git
 ARG MEDIAMTX_BRANCH=v1.19.0
 
@@ -50,7 +50,7 @@ RUN set -eux; \
 # Final Stage
 FROM ${MEDIAMTX_BASE_IMAGE}
 
-RUN apk add --no-cache aws-cli jq openssl
+RUN apk add --no-cache aws-cli openssl
 
 # Replace the runtime image binary with the selected remote source build.
 COPY --from=mediamtx-builder /mediamtx /mediamtx

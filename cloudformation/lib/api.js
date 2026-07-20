@@ -250,17 +250,13 @@ const Resources = {
                     AssociatePublicIpAddress: true,
                     Groups: [cf.ref('ServiceSecurityGroup')]
                 }],
-                UserData: {
-                    'Fn::Base64': {
-                        'Fn::Sub': [
-                            fs.readFileSync(new URL('./api.sh', import.meta.url), 'utf8'),
-                            {
-                                AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
-                                ClusterName: cf.join(['tak-vpc-', cf.ref('Environment'), '-media'])
-                            }
-                        ]
+                UserData: cf.base64(cf.sub(
+                    fs.readFileSync(new URL('./api.sh', import.meta.url), 'utf8'),
+                    {
+                        AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
+                        ClusterName: cf.join(['tak-vpc-', cf.ref('Environment'), '-media'])
                     }
-                },
+                )),
                 TagSpecifications: [{
                     ResourceType: 'instance',
                     Tags: [{
