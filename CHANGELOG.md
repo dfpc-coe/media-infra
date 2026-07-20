@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v9.6.0 - 2026-07-19
+
+- :rocket: Rewrite build script as typescript
+- :tada: Add support for CoTURN configuration
+
 ### v9.5.0 - 2026-06-03
 
 - :arrow_up: Update MediaMTX to 1.19
