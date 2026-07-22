@@ -1,7 +1,7 @@
 ARG BUILDPLATFORM
-ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.19.1-ffmpeg
+ARG MEDIAMTX_BASE_IMAGE=bluenviron/mediamtx:1.19.2-ffmpeg
 ARG MEDIAMTX_REPO=https://github.com/bluenviron/mediamtx.git
-ARG MEDIAMTX_BRANCH=v1.19.0
+ARG MEDIAMTX_BRANCH=v1.19.2
 
 FROM --platform=$BUILDPLATFORM node:24-alpine AS app-builder
 
