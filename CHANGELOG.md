@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.7.0 - 2026-07-23
+
+- :arrow_up: Update to MediaMTX@1.19.2
+
 ### v9.6.0 - 2026-07-19
 
 - :rocket: Rewrite build script as typescript
