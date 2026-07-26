@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.8.0 - 2026-07-25
+
+- :rocket: Add support for multiarch builds and test to ensure no regressions - Closes: https://github.com/dfpc-coe/media-infra/issues/53
+
 ### v9.7.0 - 2026-07-23
 
 - :arrow_up: Update to MediaMTX@1.19.2
