@@ -23,7 +23,8 @@ await login();
 await ensureBinfmt();
 await ensureBuilder();
 console.error('ok - building containers');
-await tak();
+const image = await tak();
+await verify(image);
 
 function login() {
     console.error('ok - logging in')
@@ -57,6 +58,22 @@ function tak() {
                 --tag "${image}" \
                 --push \
                 .
+        `, (err) => {
+            if (err) return reject(err);
+            return resolve(image);
+        });
+
+        $.stdout.pipe(process.stdout);
+        $.stderr.pipe(process.stderr);
+    });
+}
+
+function verify(image) {
+    console.error('ok - verifying multiarch manifest');
+
+    return new Promise((resolve, reject) => {
+        const $ = CP.exec(`
+            npx --yes tsx bin/multiarch.ts "${image}"
         `, (err) => {
             if (err) return reject(err);
             return resolve();
