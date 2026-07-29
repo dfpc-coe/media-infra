@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+- :tada: Expose a `MEDIAMTX_LOGLEVEL` environment variable for setting the MediaMTX log level, wired to a new `MediaMTXLogLevel` CloudFormation parameter (replaces `LOG_LEVEL`/`LogLevel`)
+
 ### v9.8.0 - 2026-07-25
 
 - :rocket: Add support for multiarch builds and test to ensure no regressions - Closes: https://github.com/dfpc-coe/media-infra/issues/53
