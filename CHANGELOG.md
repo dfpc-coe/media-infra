@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+### v9.8.1 - 2026-07-29
+
 - :tada: Expose a `MEDIAMTX_LOGLEVEL` environment variable for setting the MediaMTX log level, wired to a new `MediaMTXLogLevel` CloudFormation parameter (replaces `LOG_LEVEL`/`LogLevel`)
 
 ### v9.8.0 - 2026-07-25
