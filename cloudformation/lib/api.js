@@ -74,7 +74,7 @@ const PORTS = [{
 
 const containerEnvironment = [
     { Name: 'StackName', Value: cf.stackName },
-    { Name: 'LOG_LEVEL', Value: cf.ref('LogLevel') },
+    { Name: 'MEDIAMTX_LOGLEVEL', Value: cf.ref('MediaMTXLogLevel') },
     { Name: 'Environment', Value: cf.ref('Environment') },
     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
@@ -390,6 +390,7 @@ const Resources = {
                 PortMappings: portMappings,
                 Environment: [
                     { Name: 'StackName', Value: cf.stackName },
+                    { Name: 'MEDIAMTX_LOGLEVEL', Value: cf.ref('MediaMTXLogLevel') },
                     { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
                 ],
                 LogConfiguration: {
@@ -534,8 +535,8 @@ export default cf.merge({
             Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>',
             Default: '/aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id'
         },
-        LogLevel: {
-            Description: 'Log Level for MediaMTX',
+        MediaMTXLogLevel: {
+            Description: 'Log Level for the MediaMTX server',
             Type: 'String',
             AllowedValues: ['debug', 'info', 'warn', 'error'],
             Default: 'warn'

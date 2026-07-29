@@ -32,6 +32,14 @@ ffmpeg -re -i <source> \
 
 If the source cannot publish WebRTC-safe media directly, publish it to a separate raw path and transcode that path into the user-facing path with FFmpeg; otherwise WebRTC will inherit the source codec profile and timestamps.
 
+## Logging
+
+The MediaMTX log level is set by the configuration script at container start via the `MEDIAMTX_LOGLEVEL`
+environment variable. Valid values are `error`, `warn`, `info` & `debug` - an unrecognized value logs a
+warning and falls back to `info`.
+
+In AWS deployments this is set from the `MediaMTXLogLevel` CloudFormation parameter, which defaults to `warn`.
+
 ## Local Development
 
 To run the media server locally, you can use Docker. First ensure that you have a local CloudTAK instance running and then run:

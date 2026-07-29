@@ -3,7 +3,11 @@ import { execSync } from 'node:child_process';
 import { fetch } from 'undici';
 import jwt from 'jsonwebtoken';
 
-const LOGLEVEL = process.env.LOG_LEVEL || 'info';
+// Log levels supported by MediaMTX - anything else causes MediaMTX to refuse to start
+const LOGLEVELS = ['error', 'warn', 'info', 'debug'];
+const DEFAULT_LOGLEVEL = 'info';
+
+const LOGLEVEL = resolveLogLevel();
 const AUTH_ADDRESS = 'http://127.0.0.1:9995/auth';
 
 // Default CoTURN listening port (coturn-infra coturn.conf listening-port)
@@ -22,6 +26,24 @@ const yaml = generateConfig(
 fs.writeFileSync('/mediamtx.yml', yaml);
 
 console.log('ok - MediaMTX configuration written to /mediamtx.yml');
+
+/**
+ * Resolve the MediaMTX log level from MEDIAMTX_LOGLEVEL, falling back to the
+ * MediaMTX default of `info`. An unknown value is ignored rather than written
+ * to the config, as MediaMTX would fail to start with it.
+ */
+function resolveLogLevel(): string {
+    const level = (process.env.MEDIAMTX_LOGLEVEL || '').trim().toLowerCase();
+
+    if (!level) return DEFAULT_LOGLEVEL;
+
+    if (!LOGLEVELS.includes(level)) {
+        console.error(`warn - Unknown MEDIAMTX_LOGLEVEL "${level}", falling back to ${DEFAULT_LOGLEVEL}`);
+        return DEFAULT_LOGLEVEL;
+    }
+
+    return level;
+}
 
 /**
  * Extract the hostname from CLOUDTAK_Config_media_url and merge it

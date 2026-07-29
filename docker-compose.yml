@@ -5,6 +5,7 @@ services:
     restart: always
     environment:
       - API_URL
+      - MEDIAMTX_LOGLEVEL
     ports:
       - 8554:8554
       - 9997:9997
