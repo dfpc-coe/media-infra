@@ -1,8 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Manifest } from '../lib/manifest.js';
-import { verifySignedUrl } from '../lib/signing.js';
+import {
+    verifySignedUrl,
+    PLAYLIST_TOKEN_TTL_SECONDS,
+    SEGMENT_TOKEN_TTL_SECONDS
+} from '../lib/signing.js';
 import NodeCache from 'node-cache';
+
+function tokenClaims(signedUrl: string) {
+    const token = new URL(`http://example.com${signedUrl}`).searchParams.get('token');
+    assert.ok(token, 'Signed URL should carry a token');
+
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()) as {
+        hash: string;
+        type: string;
+        iat: number;
+        exp: number;
+    };
+}
 
 test('Manifest.rewrite', async (t) => {
     await t.test('rewrites master playlist', () => {
@@ -84,6 +100,39 @@ segment0.ts
         assert.equal(decodedFirst.hash, decodedSecond.hash, 'Repeated rewrites should reuse the same hash');
         assert.deepEqual(cache.keys(), [`${streamId}-${decodedFirst.hash}`], 'Repeated rewrites should reuse the same cache entry');
         assert.equal(cache.get(`${streamId}-${decodedFirst.hash}`), 'http://example.com/stream/123/segment0.ts');
+    });
+
+    await t.test('grants nested playlists a session-length token', () => {
+        // A player resolves the variant playlist URL once from the master playlist
+        // and then reloads that same URL for the life of the live stream, so a
+        // segment-length token would 403 mid-playback
+        const baseUrl = 'http://example.com/stream/123/playlist.m3u8';
+        const streamId = 'test-stream';
+        const config = { SigningSecret: 'secret' } as any;
+        const cache = new NodeCache();
+
+        const signed = Manifest.rewriteSignedUrl('chunklist_w560439810.m3u8', baseUrl, streamId, config, cache);
+        const claims = tokenClaims(signed);
+
+        assert.equal(claims.type, 'm3u8');
+        assert.equal(claims.exp - claims.iat, PLAYLIST_TOKEN_TTL_SECONDS, 'Playlist token should outlive a viewing session');
+
+        const cacheTtl = cache.getTtl(`${streamId}-${claims.hash}`);
+        assert.ok(cacheTtl && cacheTtl - Date.now() > SEGMENT_TOKEN_TTL_SECONDS * 1000,
+            'Playlist cache entry must outlive the token it signs');
+    });
+
+    await t.test('keeps media segment tokens short lived', () => {
+        const baseUrl = 'http://example.com/stream/123/chunklist.m3u8';
+        const streamId = 'test-stream';
+        const config = { SigningSecret: 'secret' } as any;
+        const cache = new NodeCache();
+
+        const signed = Manifest.rewriteSignedUrl('media_w560439810_606179.ts', baseUrl, streamId, config, cache);
+        const claims = tokenClaims(signed);
+
+        assert.equal(claims.type, 'ts');
+        assert.equal(claims.exp - claims.iat, SEGMENT_TOKEN_TTL_SECONDS, 'Segment tokens should stay short lived');
     });
 });
 

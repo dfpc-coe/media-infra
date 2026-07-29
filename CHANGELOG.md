@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+- :bug: Fix HLS proxy streams failing with `403 Invalid or expired signed URL` after 10 minutes of playback. A variant playlist URL is a long lived handle that a player reloads for the life of a live stream, so it is now signed with a session length token rather than a segment length one
+
 ### v9.8.1 - 2026-07-29
 
 - :tada: Expose a `MEDIAMTX_LOGLEVEL` environment variable for setting the MediaMTX log level, wired to a new `MediaMTXLogLevel` CloudFormation parameter (replaces `LOG_LEVEL`/`LogLevel`)

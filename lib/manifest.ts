@@ -22,15 +22,20 @@ export class Manifest {
     ): string {
         const absoluteUrl = new URL(uri, baseUrl).href;
         const resourceHash = Manifest.resourceHash(absoluteUrl);
-        cache.set(`${stream}-${resourceHash}`, absoluteUrl);
 
         const ext = path.parse(new URL(absoluteUrl).pathname).ext;
 
-        if (ext && ext.length > 1) {
-            return generateSignedUrl(config.SigningSecret, stream, resourceHash, ext.slice(1));
-        } else {
+        if (!ext || ext.length <= 1) {
             throw new Err(400, null, `Unsupported media segment type: ${ext}`);
         }
+
+        const { url, expires } = generateSignedUrl(config.SigningSecret, stream, resourceHash, ext.slice(1));
+
+        // The cache entry must outlive the token signed for it, otherwise an
+        // expiring mapping turns into a 404 rather than the resource it signs
+        cache.set(`${stream}-${resourceHash}`, absoluteUrl, expires);
+
+        return url;
     }
 
     static rewriteUriTag(
