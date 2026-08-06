@@ -79,6 +79,7 @@ const containerEnvironment = [
     { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', 'video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
+    { Name: 'CLOUDTAK_Config_media_ingest_internal_host', Value: cf.ref('MediaIngestInternalHost') },
     { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificate') },
     { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
     { Name: 'AWS_REGION', Value: cf.region }
@@ -540,6 +541,11 @@ export default cf.merge({
             Type: 'String',
             AllowedValues: ['debug', 'info', 'warn', 'error'],
             Default: 'warn'
+        },
+        MediaIngestInternalHost: {
+            Description: 'Optional internal hostname to rewrite RTSP proxy sources to when their hostname matches CLOUDTAK_Config_media_url\'s own hostname (avoids a hairpin-NAT pull when this deployment publishes and relays through separate internal hosts). Leave blank to disable rewriting (default).',
+            Type: 'String',
+            Default: ''
         },
         EnableExecute: {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
