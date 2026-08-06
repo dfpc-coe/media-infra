@@ -14,6 +14,7 @@ const baseConfig: Config = {
     silent: true,
     API_URL: 'http://cloudtak.internal:5000',
     CLOUDTAK_Config_media_url: 'http://media.example.com',
+    CLOUDTAK_Config_media_ingest_internal_host: '',
     SigningSecret: 'test-secret'
 };
 

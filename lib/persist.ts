@@ -40,7 +40,7 @@ export async function syncPaths(config: Config): Promise<void> {
             continue;
         }
 
-        const payload = createPayload(path);
+        const payload = createPayload(path, config);
 
         if (!exists) {
             await createMediaMTXPath(config, payload);
@@ -175,7 +175,12 @@ export async function listCloudTAKPaths(config: Config): Promise<Map<string, Sta
         const url = new URL(process.env.API_URL + '/api/video/lease');
         url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
-        url.searchParams.append('ephemeral', 'false');
+        // 'false' excluded every ephemeral lease from this list - the exact set
+        // syncPaths() then deletes as "not in CloudTAK's current lease list" on
+        // its next 10s tick, since ephemeral leases (e.g. CoT-carried video) were
+        // invisible to it. 'all' includes them, same as every other lease type;
+        // they're still governed by their own expiration/`expired` filtering.
+        url.searchParams.append('ephemeral', 'all');
         url.searchParams.append('impersonate', 'true');
         url.searchParams.append('page', String(page));
 
