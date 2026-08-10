@@ -37,6 +37,10 @@ rtmpsAddress: :1936
 hls: yes
 hlsAddress: :8888
 hlsEncryption: no
+# fMP4-based HLS - supports H264, H265, Opus, MPEG-4 Audio (AAC) & more.
+# The mpegts variant is intentionally not used: it supports H264 video and
+# MPEG-4 Audio only and the muxer fails immediately on any other codec.
+hlsVariant: fmp4
 
 webrtc: true
 # Address of the WebRTC TCP/HTTP listener.

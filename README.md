@@ -32,6 +32,17 @@ ffmpeg -re -i <source> \
 
 If the source cannot publish WebRTC-safe media directly, publish it to a separate raw path and transcode that path into the user-facing path with FFmpeg; otherwise WebRTC will inherit the source codec profile and timestamps.
 
+## HLS Variant & Codec Support
+
+HLS is served using the fMP4 variant (`hlsVariant: fmp4` in `mediamtx.yml`), which supports
+H264, H265, Opus, MPEG-4 Audio (AAC) & more. The `mpegts` variant is intentionally not used:
+it supports H264 video and MPEG-4 Audio only, and the HLS muxer fails immediately on any other
+codec. If a stream still cannot be muxed, the MediaMTX error text is passed through to the HLS
+client in the playlist error response.
+
+Note that codec support in the browser itself still applies - H265 playback remains limited
+regardless of variant.
+
 ## Logging
 
 The MediaMTX log level is set by the configuration script at container start via the `MEDIAMTX_LOGLEVEL`

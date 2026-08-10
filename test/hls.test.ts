@@ -6,6 +6,7 @@ import {
     getPlaylistUpstreamUrl,
     getProxyRequestHeaders,
     getProxyResponseHeaders,
+    getUpstreamErrorDetail,
     getUpstreamRequestMethod,
     shouldSendProxyBody
 } from '../routes/hls.js';
@@ -119,6 +120,41 @@ test('getPlaylistUpstreamUrl', async (t) => {
         );
 
         assert.equal(url.toString(), 'http://localhost:8888/camera-1/index.m3u8');
+    });
+});
+
+test('getUpstreamErrorDetail', async (t) => {
+    await t.test('extracts the error message from a MediaMTX JSON error body', () => {
+        assert.equal(
+            getUpstreamErrorDetail(JSON.stringify({
+                status: 'error',
+                error: 'the MPEG-TS variant of HLS supports H264 video only'
+            })),
+            'the MPEG-TS variant of HLS supports H264 video only'
+        );
+    });
+
+    await t.test('falls back to plain text bodies', () => {
+        assert.equal(getUpstreamErrorDetail('  stream is not ready \n'), 'stream is not ready');
+    });
+
+    await t.test('ignores empty bodies', () => {
+        assert.equal(getUpstreamErrorDetail(''), null);
+        assert.equal(getUpstreamErrorDetail('   \n'), null);
+    });
+
+    await t.test('ignores JSON bodies without a usable error field', () => {
+        assert.equal(getUpstreamErrorDetail(JSON.stringify({ status: 'error' })), null);
+        assert.equal(getUpstreamErrorDetail(JSON.stringify({ error: '  ' })), null);
+    });
+
+    await t.test('ignores HTML error pages', () => {
+        assert.equal(getUpstreamErrorDetail('<html><body>502 Bad Gateway</body></html>'), null);
+    });
+
+    await t.test('caps overly long messages', () => {
+        const detail = getUpstreamErrorDetail('x'.repeat(2048));
+        assert.equal(detail?.length, 512);
     });
 });
 

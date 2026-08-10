@@ -99,6 +99,49 @@ export function bindClientDisconnectAbort(req: AbortAwareEmitter, res: AbortAwar
     };
 }
 
+export function getUpstreamErrorDetail(body: string): string | null {
+    const text = body.trim();
+    if (!text) return null;
+
+    // MediaMTX returns errors as { "status": "error", "error": "<reason>" }
+    try {
+        const parsed = JSON.parse(text);
+
+        if (parsed && typeof parsed.error === 'string' && parsed.error.trim()) {
+            return parsed.error.trim().slice(0, 512);
+        }
+
+        // Parseable JSON without a usable error message - the raw blob is noise
+        return null;
+    } catch {
+        // Not JSON - fall through to plain text handling
+    }
+
+    // An HTML error page from an intermediate proxy is noise, not a cause
+    if (text.startsWith('<')) return null;
+
+    return text.slice(0, 512);
+}
+
+async function throwPlaylistError(resPlaylist: Response): Promise<never> {
+    let detail: string | null = null;
+    try {
+        detail = getUpstreamErrorDetail(await resPlaylist.text());
+    } catch {
+        // Body unreadable - fall back to status text
+    }
+
+    if (resPlaylist.status === 404) {
+        throw new Err(404, null, detail
+            ? `Stream not found: ${detail}`
+            : `Stream not found: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+    } else {
+        throw new Err(500, null, detail
+            ? `Stream cannot play: ${detail}`
+            : `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
+    }
+}
+
 function shouldSendUpstreamBody(status: number, body: Response['body'] | null): body is Response['body'] {
     return body !== null && ![204, 205, 304].includes(status);
 }
@@ -146,11 +189,7 @@ export default async function router(schema: Schema, config: Config) {
                 });
 
                 if (!resPlaylist.ok) {
-                    if (resPlaylist.status === 404) {
-                        throw new Err(404, null, `Stream not found: ${resPlaylist.status}: ${resPlaylist.statusText}`);
-                    } else {
-                        throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
-                    }
+                    await throwPlaylistError(resPlaylist);
                 }
 
                 res.status(resPlaylist.status);
@@ -180,11 +219,7 @@ export default async function router(schema: Schema, config: Config) {
                 });
 
                 if (!resPlaylist.ok) {
-                    if (resPlaylist.status === 404) {
-                        throw new Err(404, null, `Stream not found: ${resPlaylist.status}: ${resPlaylist.statusText}`);
-                    } else {
-                        throw new Err(500, null, `Failed to fetch playlist: ${resPlaylist.status}: ${resPlaylist.statusText}`);
-                    }
+                    await throwPlaylistError(resPlaylist);
                 }
 
                 res.status(resPlaylist.status);
