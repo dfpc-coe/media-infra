@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+### v9.10.0 - 2026-08-09
+
 - :bug: Pass the upstream MediaMTX error text through to HLS clients when a playlist fetch fails, instead of a generic `Failed to fetch playlist: 500: Internal Server Error`. A codec limit such as `the MPEG-TS variant of HLS supports H264 video only` is now returned as `Stream cannot play: <reason>` - Closes: https://github.com/dfpc-coe/CloudTAK/issues/1641
 - :tada: Pin the HLS variant explicitly to `fmp4` in `mediamtx.yml` - unlike `mpegts` (H264 video and MPEG-4 Audio only), fMP4 segments support H265, Opus & more
 - :pencil2: Document HLS codec support and the reason `mpegts` is not used in the README
