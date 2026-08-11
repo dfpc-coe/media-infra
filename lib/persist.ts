@@ -175,7 +175,7 @@ export async function listCloudTAKPaths(config: Config): Promise<Map<string, Sta
         const url = new URL(process.env.API_URL + '/api/video/lease');
         url.searchParams.append('limit', String(limit));
         url.searchParams.append('expired', 'false');
-        url.searchParams.append('ephemeral', 'false');
+        url.searchParams.append('ephemeral', 'all');
         url.searchParams.append('impersonate', 'true');
         url.searchParams.append('page', String(page));
 
