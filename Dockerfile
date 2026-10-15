@@ -17,7 +17,7 @@ RUN npm prune --omit=dev
 
 FROM node:24-alpine AS node-runtime
 
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS mediamtx-builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS mediamtx-builder
 
 ARG TARGETOS
 ARG TARGETARCH

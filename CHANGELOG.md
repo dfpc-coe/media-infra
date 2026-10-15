@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.12.1 - 2026-10-15
+
+- :bug: Bump MediaMTX builder image to `golang:1.27-alpine`; MediaMTX v1.21.2 requires Go 1.27
+
 ### v9.12.0 - 2026-10-15
 
 - :arrow_up: Update to MediaMTX@1.21.2
