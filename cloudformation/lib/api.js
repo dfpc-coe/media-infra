@@ -76,7 +76,6 @@ const containerEnvironment = [
     { Name: 'StackName', Value: cf.stackName },
     { Name: 'MEDIAMTX_LOGLEVEL', Value: cf.ref('MediaMTXLogLevel') },
     { Name: 'Environment', Value: cf.ref('Environment') },
-    { Name: 'SigningSecret', Value: cf.sub('{{resolve:secretsmanager:tak-cloudtak-${Environment}/api/secret:SecretString::AWSCURRENT}}') },
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', 'video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificate') },
@@ -102,6 +101,9 @@ function containerDefinition(name) {
         }],
         PortMappings: portMappings,
         Environment: containerEnvironment,
+        Secrets: [
+            { Name: 'SigningSecret', ValueFrom: cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:tak-cloudtak-', cf.ref('Environment'), '/api/secret']) }
+        ],
         LogConfiguration: {
             LogDriver: 'awslogs',
             Options: {
@@ -431,6 +433,14 @@ const Resources = {
                             'logs:DescribeLogStreams'
                         ],
                         Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
+                    },{
+                        Effect: 'Allow',
+                        Action: ['secretsmanager:GetSecretValue'],
+                        Resource: [cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:tak-cloudtak-', cf.ref('Environment'), '/api/secret-*'])]
+                    },{
+                        Effect: 'Allow',
+                        Action: ['kms:Decrypt'],
+                        Resource: [cf.join(['arn:', cf.partition, ':kms:', cf.region, ':', cf.accountId, ':key/', cf.importValue(cf.join(['tak-cloudtak-', cf.ref('Environment'), '-kms']))])]
                     }]
                 }
             }],

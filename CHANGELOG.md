@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v9.12.0 - 2026-10-15
+
+- :arrow_up: Update to MediaMTX@1.21.2
+- :rocket: Move AWS Secrets from Task Definition's `Environment` to `Secrets` to avoid logging sensitive data in ECS Task logs
+
 ### v9.11.0 - 2026-08-11
 
 - :bug: Sync all leases regardless of if they are ephemeral to ensure source based leases are retained
