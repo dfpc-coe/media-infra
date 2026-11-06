@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+- :arrow_up: Update builder and runtime Node images to `node:26-alpine` (Node 26.13+) to pick up the Brotli decoder fix for CVE-2026-111497 - Closes: https://github.com/dfpc-coe/media-infra/issues/61
+
 ### v9.12.1 - 2026-10-15
 
 - :bug: Bump MediaMTX builder image to `golang:1.27-alpine`; MediaMTX v1.21.2 requires Go 1.27

@@ -78,7 +78,7 @@ const containerEnvironment = [
     { Name: 'Environment', Value: cf.ref('Environment') },
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', 'video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
-    { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificate') },
+    { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificateV2') },
     { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
     { Name: 'AWS_REGION', Value: cf.region }
 ];
@@ -118,7 +118,7 @@ function containerDefinition(name) {
 }
 
 const Resources = {
-    MediaCertificate: {
+    MediaCertificateV2: {
         Type: 'AWS::CertificateManager::Certificate',
         Properties: {
             DomainName: cf.join(['video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
@@ -482,7 +482,7 @@ const Resources = {
                             'acm:ExportCertificate',
                             'acm:GetCertificate'
                         ],
-                        Resource: cf.ref('MediaCertificate')
+                        Resource: cf.ref('MediaCertificateV2')
                     },{
                         Effect: 'Allow',
                         Action: [
@@ -573,7 +573,7 @@ export default cf.merge({
         },
         MediaCertificateArn: {
             Description: 'Exportable ACM certificate ARN used by the media service',
-            Value: cf.ref('MediaCertificate')
+            Value: cf.ref('MediaCertificateV2')
         }
     },
     Resources
