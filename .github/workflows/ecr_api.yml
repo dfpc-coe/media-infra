@@ -58,10 +58,3 @@ jobs:
           Environment: 'cotak-staging'
           AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
           AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
-
-      - name: Docker Build (WFTAK COTAK)
-        run: node bin/build.js
-        env:
-          Environment: 'wftak-staging'
-          AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
-          AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
