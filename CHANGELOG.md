@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+### v9.13.0 - 2026-11-06
+
 - :arrow_up: Update builder and runtime Node images to `node:26-alpine` (Node 26.13+) to pick up the Brotli decoder fix for CVE-2026-111497 - Closes: https://github.com/dfpc-coe/media-infra/issues/61
 - :arrow_up: Update GitHub Actions to `actions/checkout@v7`, `actions/setup-node@v7`, `docker/setup-buildx-action@v4`, `docker/setup-qemu-action@v4`, and `softprops/action-gh-release@v3`
 - :rocket: Remove the `wftak-staging` image build from the ECR workflow
