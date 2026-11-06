@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{github.event.pull_request.head.sha || github.sha}}
 
@@ -56,12 +56,5 @@ jobs:
         run: node bin/build.js
         env:
           Environment: 'cotak-staging'
-          AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
-          AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
-
-      - name: Docker Build (WFTAK COTAK)
-        run: node bin/build.js
-        env:
-          Environment: 'wftak-staging'
           AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
           AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
