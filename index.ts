@@ -5,6 +5,7 @@ import cors from 'cors';
 import { config } from './lib/config.js';
 import type { Config } from './lib/config.js';
 import { sync, schedule } from './lib/persist.js';
+import { EIP } from './lib/eip.js';
 import express from 'express';
 import Schema from '@openaddresses/batch-schema';
 import { StandardResponse } from './lib/types.js';
@@ -24,6 +25,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!process.env.SigningSecret) throw new Error('SigningSecret Env Var not set');
 
     await server(config);
+
+    if (process.env.EIP_ALLOCATION_ID) {
+        EIP.start(process.env.EIP_ALLOCATION_ID).catch((err) => {
+            console.error('warn - EIP association unavailable:', err);
+        });
+    }
 
     try {
         await sync(config);

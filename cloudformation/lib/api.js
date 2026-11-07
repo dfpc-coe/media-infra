@@ -79,6 +79,7 @@ const containerEnvironment = [
     { Name: 'API_URL', Value: cf.join(['https://map.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'CLOUDTAK_Config_media_url', Value: cf.join(['https://', 'video', '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
     { Name: 'ACM_CERTIFICATE_ARN', Value: cf.ref('MediaCertificateV2') },
+    { Name: 'EIP_ALLOCATION_ID', Value: cf.getAtt('ELBEIPSubnetA', 'AllocationId') },
     { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
     { Name: 'AWS_REGION', Value: cf.region }
 ];
@@ -101,6 +102,13 @@ function containerDefinition(name) {
         }],
         PortMappings: portMappings,
         Environment: containerEnvironment,
+        HealthCheck: {
+            Command: ['CMD-SHELL', 'wget -q -O /dev/null --no-check-certificate https://127.0.0.1:9997/ || wget -q -O /dev/null http://127.0.0.1:9997/'],
+            Interval: 30,
+            Timeout: 5,
+            Retries: 3,
+            StartPeriod: 120
+        },
         Secrets: [
             { Name: 'SigningSecret', ValueFrom: cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:tak-cloudtak-', cf.ref('Environment'), '/api/secret']) }
         ],
@@ -205,20 +213,6 @@ const Resources = {
                     Action: 'sts:AssumeRole'
                 }]
             },
-            Policies: [{
-                PolicyName: cf.join('-', [cf.stackName, 'eip-association']),
-                PolicyDocument: {
-                    Statement: [{
-                        Effect: 'Allow',
-                        Action: [
-                            'ec2:AssociateAddress',
-                            'ec2:DescribeAddresses',
-                            'ec2:DescribeInstances'
-                        ],
-                        Resource: '*'
-                    }]
-                }
-            }],
             ManagedPolicyArns: [
                 cf.join(['arn:', cf.partition, ':iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role']),
                 cf.join(['arn:', cf.partition, ':iam::aws:policy/AmazonSSMManagedInstanceCore'])
@@ -255,7 +249,6 @@ const Resources = {
                 UserData: cf.base64(cf.sub(
                     fs.readFileSync(new URL('./api.sh', import.meta.url), 'utf8'),
                     {
-                        AllocationId: cf.getAtt('ELBEIPSubnetA', 'AllocationId'),
                         ClusterName: cf.join(['tak-vpc-', cf.ref('Environment'), '-media'])
                     }
                 )),
@@ -284,6 +277,8 @@ const Resources = {
             MaxSize: '2',
             HealthCheckGracePeriod: 300,
             HealthCheckType: 'EC2',
+            NewInstancesProtectedFromScaleIn: true,
+            TerminationPolicies: ['OldestInstance'],
             VPCZoneIdentifier: [
                 cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
                 cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-b']))
@@ -316,7 +311,8 @@ const Resources = {
                     MaximumScalingStepSize: 1,
                     InstanceWarmupPeriod: 300
                 },
-                ManagedTerminationProtection: 'DISABLED'
+                ManagedTerminationProtection: 'ENABLED',
+                ManagedDraining: 'ENABLED'
             },
             Tags: [{
                 Key: 'Name',
@@ -478,6 +474,13 @@ const Resources = {
                     },{
                         Effect: 'Allow',
                         Action: [
+                            'ec2:AssociateAddress',
+                            'ec2:DescribeAddresses'
+                        ],
+                        Resource: '*'
+                    },{
+                        Effect: 'Allow',
+                        Action: [
                             'acm:DescribeCertificate',
                             'acm:ExportCertificate',
                             'acm:GetCertificate'
@@ -515,6 +518,7 @@ const Resources = {
             PropagateTags: 'SERVICE',
             EnableExecuteCommand: cf.ref('EnableExecute'),
             DesiredCount: 1,
+            HealthCheckGracePeriodSeconds: 300,
             DeploymentConfiguration: {
                 MinimumHealthyPercent: 100,
                 MaximumPercent: 200

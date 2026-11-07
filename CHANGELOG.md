@@ -12,6 +12,12 @@
 
 ### Pending Release
 
+### v9.14.0 - 2026-11-06
+
+- :bug: Associate the media EIP from inside the service task (`lib/eip.ts`) and reconcile it every minute so the address follows the task wherever ECS places it; the one-shot host UserData association is removed
+- :bug: Enable capacity provider managed termination protection and draining, protect ASG instances from scale-in, and terminate `OldestInstance` so a post-deploy scale-in can no longer remove the host running the new task
+- :rocket: Add a container health check on `:9997` and a 300s service health check grace period so deployments wait for the new task to serve before stopping the old one
+
 ### v9.13.0 - 2026-11-06
 
 - :arrow_up: Update builder and runtime Node images to `node:26-alpine` (Node 26.13+) to pick up the Brotli decoder fix for CVE-2026-111497 - Closes: https://github.com/dfpc-coe/media-infra/issues/61
