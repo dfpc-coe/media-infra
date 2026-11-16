@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v9.15.0 - 2026-11-16
+
+- :arrow_up: Update MediaMTX to 1.21.4
+
 ### v9.14.0 - 2026-11-06
 
 - :bug: Associate the media EIP from inside the service task (`lib/eip.ts`) and reconcile it every minute so the address follows the task wherever ECS places it; the one-shot host UserData association is removed
