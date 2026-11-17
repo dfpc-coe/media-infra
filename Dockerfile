@@ -50,7 +50,7 @@ RUN set -eux; \
 # Final Stage
 FROM ${MEDIAMTX_BASE_IMAGE}
 
-RUN apk add --no-cache aws-cli openssl
+RUN apk add --no-cache aws-cli openssl libatomic
 
 # Replace the runtime image binary with the selected remote source build.
 COPY --from=mediamtx-builder /mediamtx /mediamtx

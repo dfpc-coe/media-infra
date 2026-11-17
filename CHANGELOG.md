@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v9.15.1 - 2026-11-17
+
+- :bug: Install `libatomic` in the final image so the amd64 Node 26 runtime can start
+- :white_check_mark: Build the amd64 and arm64 images in CI and confirm `node` starts
+
 ### v9.15.0 - 2026-11-16
 
 - :arrow_up: Update MediaMTX to 1.21.4

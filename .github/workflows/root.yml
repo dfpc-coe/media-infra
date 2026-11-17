@@ -36,3 +36,18 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Docker Build
+        run: |
+          for arch in amd64 arm64; do
+            docker build --platform "linux/$arch" -t "media-infra:test-$arch" .
+          done
+
+      - name: Docker Smoke Test
+        run: |
+          for arch in amd64 arm64; do
+            docker run --rm --platform "linux/$arch" --entrypoint node "media-infra:test-$arch" -v
+          done
